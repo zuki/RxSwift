@@ -2,7 +2,7 @@
 
 test("----- githubSignUp -----", function (check, pass) {
 
-  UIATarget.onAlert = function(alert){
+  UIATarget.onAlert = function(){
     UIATarget.localTarget().frontMostApp().alert().buttons()["Cancel"].tap();
     UIATarget.localTarget().frontMostApp().navigationBar().leftButton().tap();
 
@@ -10,7 +10,7 @@ test("----- githubSignUp -----", function (check, pass) {
     return false;
   }
 
-  UIATarget.localTarget().frontMostApp().mainWindow().tableViews()[0].cells()[0].tapWithOptions({tapOffset:{x:0.24, y:0.20}});
+  UIATarget.localTarget().frontMostApp().mainWindow().tableViews()[0].cells()[0].tap();
 
   UIATarget.localTarget().frontMostApp().mainWindow().textFields()[0].tap();
   writeInElement(UIATarget.localTarget().frontMostApp().mainWindow().textFields()[0], "rxrevolution")
@@ -23,8 +23,10 @@ test("----- githubSignUp -----", function (check, pass) {
   UIATarget.localTarget().frontMostApp().mainWindow().secureTextFields()[1].tap();
   writeInElement(UIATarget.localTarget().frontMostApp().mainWindow().secureTextFields()[1], "mypassword")
 
-  UIATarget.localTarget().tap({x:14.50, y:80.00});
+  UIATarget.localTarget().tap({x:2, y:150.00});
   UIATarget.localTarget().frontMostApp().mainWindow().buttons()["Sign up"].tap();
+
+  sleep(10)
 });
 
 

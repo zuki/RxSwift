@@ -207,17 +207,15 @@ class GitHubSignupViewController : ViewController {
                 case .SignedUp(let signed):
                     self.signingUpOulet.hidden = true
                     
-                    let controller: UIAlertController
+                    let alert: UIAlertView
                     
                     if signed {
-                        controller = UIAlertController(title: "GitHub", message: "Mock signed up to GitHub", preferredStyle: .Alert)
+                        alert = UIAlertView(title: "GitHub", message: "Mock signed up to GitHub", delegate: nil, cancelButtonTitle: "Cancel")
                     }
                     else {
-                        controller = UIAlertController(title: "GitHub", message: "Mock signed up failed", preferredStyle: .Alert)
+                        alert = UIAlertView(title: "GitHub", message: "Mock signed up failed", delegate: nil, cancelButtonTitle: "Cancel")
                     }
-                    
-                    controller.addAction(UIAlertAction(title: "Cancel", style: .Cancel, handler: nil))
-                    self.presentViewController(controller, animated: true, completion: nil)
+                    alert.show()
                 default:
                     self.signingUpOulet.hidden = true
                 }

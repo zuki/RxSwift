@@ -6,14 +6,14 @@ test("----- searchWikipedia -----", function (check, pass) {
 
   UIATarget.localTarget().frontMostApp().mainWindow().tableViews()[0].cells()[1].tap();
 
-  UIATarget.localTarget().frontMostApp().mainWindow().searchBars()[0].searchBars()[0].tap();
-  writeInElement(UIATarget.localTarget().frontMostApp().mainWindow().searchBars()[0].searchBars()[0], "banana")
+  UIATarget.localTarget().frontMostApp().mainWindow().searchBars()[0].tap();
+  writeInElement(UIATarget.localTarget().frontMostApp().mainWindow().searchBars()[0], "banana")
   UIATarget.localTarget().delay(2);
 
   UIATarget.localTarget().tap({x:width - 40, y:43});
 
-  UIATarget.localTarget().frontMostApp().mainWindow().searchBars()[0].searchBars()[0].tap();
-  writeInElement(UIATarget.localTarget().frontMostApp().mainWindow().searchBars()[0].searchBars()[0], "Yosemite")
+  UIATarget.localTarget().frontMostApp().mainWindow().searchBars()[0].tap();
+  writeInElement(UIATarget.localTarget().frontMostApp().mainWindow().searchBars()[0], "Yosemite")
   UIATarget.localTarget().delay(2);
 
 

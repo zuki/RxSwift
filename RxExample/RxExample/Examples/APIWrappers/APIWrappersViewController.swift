@@ -51,7 +51,7 @@ class APIWrappersViewController: ViewController {
     
     let disposeBag = DisposeBag()
     
-    let manager = CLLocationManager()
+//    let manager = CLLocationManager()
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -194,7 +194,7 @@ class APIWrappersViewController: ViewController {
         
         // MARK: CLLocationManager
         
-        
+        /*
         if manager.respondsToSelector("requestWhenInUseAuthorization") {
             manager.requestWhenInUseAuthorization()
         }
@@ -213,6 +213,7 @@ class APIWrappersViewController: ViewController {
         
         
         manager.startUpdatingLocation()
+        */
         
         
         
