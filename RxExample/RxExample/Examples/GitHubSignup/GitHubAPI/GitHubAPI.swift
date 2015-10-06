@@ -45,6 +45,18 @@ class GitHubAPI {
         
         let URL = NSURL(string: "https://github.com/\(URLEscape(username))")!
         let request = NSURLRequest(URL: URL)
+        self.URLSession.rx_response(request).subscribe(next: { data, response in
+            
+            },
+            error: { e in
+            
+            },
+            completed: {
+            
+            },
+            disposed: {
+        
+        })
         return self.URLSession.rx_response(request)
             .map { (maybeData, maybeResponse) in
                 if let response = maybeResponse as? NSHTTPURLResponse {
