@@ -194,11 +194,9 @@ class APIWrappersViewController: ViewController {
 
         // MARK: CLLocationManager
 
-        if #available(iOS 8.0, *) {
-            manager.requestWhenInUseAuthorization()
-        } else {
-            // Fallback on earlier versions
-        }
+        #if !RX_NO_MODULE
+        manager.requestWhenInUseAuthorization()
+        #endif
 
         manager.rx_didUpdateLocations
             .subscribeNext { [weak self] x in
@@ -206,7 +204,7 @@ class APIWrappersViewController: ViewController {
             }
             .addDisposableTo(disposeBag)
 
-        manager.rx_didFailWithError
+        _ = manager.rx_didFailWithError
             .subscribeNext { [weak self] x in
                 self?.debug("rx_didFailWithError \(x)")
             }

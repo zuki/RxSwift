@@ -1,19 +1,17 @@
+. scripts/common.sh
 
-IS_LOCAL=0
-IS_QUICK=1
-if [ "$1" == "l" ]; then
-	echo "Local test"
-	IS_LOCAL=1
+TV_OS=0
+RELEASE_TEST=0
+
+if [ `xcodebuild -showsdks | grep tvOS | wc -l` -ge 4 ]; then
+	printf "${GREEN}tvOS found${RESET}\n"
+	TV_OS=1
 fi
 
-if [ "$1" == "f" ]; then
-	echo "Full"
-	IS_QUICK=0
-else
-	echo "Quick"
+if [ "$1" == "r" ]; then
+	printf "${GREEN}Pre release tests on, hang on tight ...${RESET}"
+	RELEASE_TEST=1
 fi
-
-ISLOCAL="${IS_LOCAL}" . scripts/common.sh
 
 # ios 7 sim
 #if [ `xcrun simctl list | grep "${DEFAULT_IOS7_SIMULATOR}" | wc -l` == 0 ]; then
@@ -29,35 +27,49 @@ ISLOCAL="${IS_LOCAL}" . scripts/common.sh
 #	echo "${DEFAULT_IOS8_SIMULATOR} exists"
 #fi
 
-if [ "${IS_LOCAL}" -eq 1 ]; then
+if [ "${RELEASE_TEST}" -eq 1 ]; then
 	. scripts/automation-tests.sh
 fi
 
-#ios 9 sim
-if [ `xcrun simctl list | grep "${DEFAULT_IOS9_SIMULATOR}" | wc -l` == 0 ]; then
-	xcrun simctl create $DEFAULT_IOS9_SIMULATOR 'iPhone 6' 'com.apple.CoreSimulator.SimRuntime.iOS-9-0'
-else
-	echo "${DEFAULT_IOS9_SIMULATOR} exists"
-fi
+CONFIGURATIONS=(Release)
 
-#watch os 2 sim
-if [ `xcrun simctl list | grep "${DEFAULT_WATCHOS2_SIMULATOR}" | wc -l` == 0 ]; then
-	xcrun simctl create $DEFAULT_WATCHOS2_SIMULATOR 'Apple Watch - 38mm' 'com.apple.CoreSimulator.SimRuntime.watchOS-2-0'
-else
-	echo "${DEFAULT_WATCHOS2_SIMULATOR} exists"
-fi
+# make sure watchos builds
+# temporary solution
+WATCH_OS_BUILD_TARGETS=(RxSwift-watchOS RxCocoa-watchOS RxBlocking-watchOS)
+for scheme in ${WATCH_OS_BUILD_TARGETS[@]}
+do
+	for configuration in ${CONFIGURATIONS[@]}
+	do
+		echo
+		printf "${GREEN}${build} ${BOLDCYAN}${scheme} - ${configuration}${RESET}\n"
+		echo
+		xcodebuild -workspace Rx.xcworkspace \
+					-scheme ${scheme} \
+					-configuration ${configuration} \
+					-sdk watchos \
+					-derivedDataPath "${BUILD_DIRECTORY}" \
+					build CODE_SIGN_IDENTITY="" CODE_SIGNING_REQUIRED=NO | xcpretty -c; STATUS=${PIPESTATUS[0]}
 
-if [ "${IS_QUICK}" -eq 1 ]; then
-	CONFIGURATIONS=(Release)
-else
-	CONFIGURATIONS=(Debug Release-Tests Release)
-fi
+		if [ $STATUS -ne 0 ]; then
+			echo $STATUS
+	 		exit $STATUS
+		fi
+	done
+done
 
 #make sure all iOS tests pass
 for configuration in ${CONFIGURATIONS[@]}
 do
 	rx "RxTests-iOS" ${configuration} $DEFAULT_IOS9_SIMULATOR test
 done
+
+#make sure all tvOS tests pass
+if [ $TV_OS -eq 1 ]; then
+	for configuration in ${CONFIGURATIONS[@]}
+	do
+		rx "RxTests-tvOS" ${configuration} $DEFAULT_TVOS_SIMULATOR test
+	done
+fi
 
 #make sure all watchOS tests pass
 #tests for Watch OS are not available rdar://21760513
@@ -101,7 +113,7 @@ do
 	done
 done
 
-if [ "${IS_LOCAL}" -eq 1 ]; then
+if [ "${RELEASE_TEST}" -eq 1 ]; then
 	mdast -u mdast-slug -u mdast-validate-links ./*.md
 	mdast -u mdast-slug -u mdast-validate-links ./**/*.md
 fi

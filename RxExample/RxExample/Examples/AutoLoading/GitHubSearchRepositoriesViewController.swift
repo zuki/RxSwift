@@ -158,7 +158,7 @@ class GitHubSearchRepositoriesAPI {
     
     private static func parseRepositories(json: [String: AnyObject]) throws -> [Repository] {
         guard let items = json["items"] as? [[String: AnyObject]] else {
-            throw exampleError("Can't find results")
+            throw exampleError("Can't find items")
         }
         return try items.map { item in
             guard let name = item["name"] as? String,
@@ -191,6 +191,7 @@ class GitHubSearchRepositoriesViewController: ViewController, UITableViewDelegat
         let $: Dependencies = Dependencies.sharedDependencies
 
         let tableView = self.tableView
+        let searchBar = self.searchBar
 
         let allRepositories = repositories
             .map { repositories in
@@ -205,14 +206,15 @@ class GitHubSearchRepositoriesViewController: ViewController, UITableViewDelegat
         }
 
         dataSource.titleForHeaderInSection = { [unowned dataSource] sectionIndex in
-            return dataSource.sectionAtIndex(sectionIndex).model
+            let section = dataSource.sectionAtIndex(sectionIndex)
+            return section.items.count > 0 ? "Repositories (\(section.items.count))" : "No repositories found"
         }
 
         // reactive data source
         allRepositories
             .bindTo(tableView.rx_itemsWithDataSource(dataSource))
             .addDisposableTo(disposeBag)
-        
+
         let loadNextPageTrigger = tableView.rx_contentOffset
             .flatMap { offset in
                 GitHubSearchRepositoriesViewController.isNearTheBottomEdge(offset, tableView)
@@ -223,11 +225,14 @@ class GitHubSearchRepositoriesViewController: ViewController, UITableViewDelegat
         searchBar.rx_text
             .throttle(0.3, $.mainScheduler)
             .distinctUntilChanged()
-            .filter { $0 != "" }
-            .map { query in
-                GitHubSearchRepositoriesAPI.sharedAPI.search(query, loadNextPageTrigger: loadNextPageTrigger)
-                    .retry(3)
-                    .catchErrorJustReturn(.Repositories([]))
+            .map { query -> Observable<SearchRepositoryResponse> in
+                if query.isEmpty {
+                    return just(.Repositories([]))
+                } else {
+                    return GitHubSearchRepositoriesAPI.sharedAPI.search(query, loadNextPageTrigger: loadNextPageTrigger)
+                        .retry(3)
+                        .catchErrorJustReturn(.Repositories([]))
+                }
             }
             .switchLatest()
             .subscribeNext { [unowned self] result in
@@ -240,28 +245,24 @@ class GitHubSearchRepositoriesViewController: ViewController, UITableViewDelegat
                 }
             }
             .addDisposableTo(disposeBag)
+
+        // dismiss keyboard on scroll
+        tableView.rx_contentOffset
+            .subscribe { _ in
+                if searchBar.isFirstResponder() {
+                    _ = searchBar.resignFirstResponder()
+                }
+            }
+            .addDisposableTo(disposeBag)
+
+        // so normal delegate customization can also be used
+        tableView.rx_setDelegate(self)
+            .addDisposableTo(disposeBag)
     }
 
-    override func setEditing(editing: Bool, animated: Bool) {
-        super.setEditing(editing, animated: animated)
-        tableView.editing = editing
-    }
-    
     // MARK: Table view delegate
     
-    func tableView(tableView: UITableView, viewForHeaderInSection section: Int) -> UIView? {
-        let title = dataSource.sectionAtIndex(section)
-        
-        let label = UILabel(frame: CGRect.zero)
-        label.text = "  \(title)"
-        label.textColor = UIColor.whiteColor()
-        label.backgroundColor = UIColor.darkGrayColor()
-        label.alpha = 0.9
-        
-        return label
-    }
-    
     func tableView(tableView: UITableView, heightForHeaderInSection section: Int) -> CGFloat {
-        return 40
+        return 30
     }
 }
