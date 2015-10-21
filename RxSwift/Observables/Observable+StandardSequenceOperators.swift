@@ -180,3 +180,40 @@ extension ObservableType {
         return FlatMap(source: self.asObservable(), selector: selector)
     }
 }
+
+// MARK: materialize and dematerialize
+
+extension ObservableType {
+    
+    /**
+    A well-formed, finite Observable will invoke its observer’s onNext method zero or more times, and then will invoke either the `onCompleted` or `onError` method exactly once.
+    Materialize operator converts this series of invocations into a series of items emitted by an Observable.
+    
+    To restore the sequence beahviour, check the revers operator `dematerialize`.
+    
+    - returns: An observable sequence that contains all the events of the source sequence as wrapped events.
+    */
+    @warn_unused_result(message="http://git.io/rxs.uo")
+    public func materialize()
+        -> Observable<Event<E>> {
+            return Materialize(source: self.asObservable())
+    }
+    
+    /**
+    The Dematerialize operator reverses the process of `materialize`. 
+    It operates on an Observable that has previously been transformed by `materialize` 
+    and returns it to its original form.
+    
+    - returns: An observable that emits the correct events as sequence, restored after _materialization_.
+    */
+    
+    @warn_unused_result(message="http://git.io/rxs.uo")
+    public func dematerialize()
+        -> Observable<E> {
+            if let source = self as? Observable<Event<E>> {
+                return Dematerialize(source: source.asObservable())
+            } else {
+                return self.asObservable()
+            }
+    }
+}

@@ -3645,3 +3645,35 @@ extension ObservableStandardSequenceOperators {
             ])
     }
 }
+
+// MARK: Materialize and Dematerialize
+
+extension ObservableStandardSequenceOperators {
+    
+    func testMaterialize_Return() {
+        let scheduler = TestScheduler(initialClock: 0)
+        
+        let xs = scheduler.createHotObservable([
+            next(100, -1),
+            next(200, -1),
+            next(300, 0),
+            completed(600)
+            ])
+        
+        var invoked = 0
+        
+        let res = scheduler.start() { () -> Observable<Event<Int>> in
+            return xs.materialize()
+        }
+        
+        XCTAssertEqual(res.messages, [
+            completed(330)
+            ])
+        
+        XCTAssertEqual(xs.subscriptions, [
+            Subscription(200, 330)
+            ])
+        
+        XCTAssertEqual(4, invoked)
+    }
+}
