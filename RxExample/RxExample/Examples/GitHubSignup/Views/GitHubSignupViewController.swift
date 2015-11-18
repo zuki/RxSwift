@@ -13,11 +13,29 @@ import RxSwift
 import RxCocoa
 #endif
 
-let okColor = UIColor(red: 138.0 / 255.0, green: 221.0 / 255.0, blue: 109.0 / 255.0, alpha: 1.0)
-let errorColor = UIColor.redColor()
-
 typealias ValidationResult = (valid: Bool?, message: String?)
 typealias ValidationObservable = Observable<ValidationResult>
+
+// Two way binding operator between control property and variable, that's all it takes {
+
+infix operator <-> {
+}
+
+func <-> <T>(property: ControlProperty<T>, variable: Variable<T>) -> Disposable {
+    let bindToUIDisposable = variable
+        .bindTo(property)
+    let bindToVariable = property
+        .subscribe(onNext: { n in
+            variable.value = n
+        }, onCompleted:  {
+            bindToUIDisposable.dispose()
+        })
+
+    return StableCompositeDisposable.create(bindToUIDisposable, bindToVariable)
+}
+
+// }
+
 
 class ValidationService {
     let API: GitHubAPI
@@ -30,7 +48,7 @@ class ValidationService {
     
     let minPasswordCount = 5
     
-    func validateUsername(username: String) -> Observable<ValidationResult> {
+    func validateUsername(username: String) -> ValidationObservable {
         if username.characters.count == 0 {
             return just((false, nil))
         }
@@ -93,6 +111,15 @@ class GitHubSignupViewController : ViewController {
     
     @IBOutlet weak var signupOutlet: UIButton!
     @IBOutlet weak var signingUpOulet: UIActivityIndicatorView!
+
+    let username = Variable("")
+    let password = Variable("")
+    let repeatedPassword = Variable("")
+
+    struct ValidationColors {
+        static let okColor = UIColor(red: 138.0 / 255.0, green: 221.0 / 255.0, blue: 109.0 / 255.0, alpha: 1.0)
+        static let errorColor = UIColor.redColor()
+    }
     
     var disposeBag = DisposeBag()
     
@@ -108,9 +135,8 @@ class GitHubSignupViewController : ViewController {
                 let validationColor: UIColor
                 
                 if let valid = v.valid {
-                    validationColor = valid ? okColor : errorColor
-                }
-                else {
+                    validationColor = valid ? ValidationColors.okColor : ValidationColors.errorColor
+                } else {
                    validationColor = UIColor.grayColor()
                 }
                 
@@ -128,44 +154,42 @@ class GitHubSignupViewController : ViewController {
         super.viewDidLoad()
         
         let tapBackground = UITapGestureRecognizer(target: self, action: Selector("dismissKeyboard:"))
-        tapBackground.numberOfTouchesRequired = 1
         view.addGestureRecognizer(tapBackground)
-        
-        self.disposeBag = DisposeBag()
         
         let API = self.API
         
         let validationService = ValidationService(API: API)
-     
-        let username = usernameOutlet.rx_text
-        let password = passwordOutlet.rx_text
-        let repeatPassword = repeatedPasswordOutlet.rx_text
-        let signupSampler = self.signupOutlet.rx_tap
+
+        // bind UI values to variables {
+        usernameOutlet.rx_text <-> username
+        passwordOutlet.rx_text <-> password
+        repeatedPasswordOutlet.rx_text <-> repeatedPassword
+        // }
+
+        let signupSampler = signupOutlet.rx_tap
         
         let usernameValidation = username
-            .map { username in
+            .flatMapLatest { username in
                 return validationService.validateUsername(username)
             }
-            .switchLatest()
             .shareReplay(1)
-        
+
         let passwordValidation = password
             .map { password in
                 return validationService.validatePassword(password)
             }
             .shareReplay(1)
-        
-        let repeatPasswordValidation = combineLatest(password, repeatPassword) { (password, repeatedPassword) in
+
+        let repeatPasswordValidation = combineLatest(password, repeatedPassword) { (password, repeatedPassword) in
                 validationService.validateRepeatedPassword(password, repeatedPassword: repeatedPassword)
             }
             .shareReplay(1)
         
         let signingProcess = combineLatest(username, password) { ($0, $1) }
             .sampleLatest(signupSampler)
-            .map { (username, password) in
+            .flatMapLatest { (username, password) in
                 return API.signup(username, password: password)
             }
-            .switchLatest()
             .startWith(SignupState.InitialState)
             .shareReplay(1)
         
@@ -174,8 +198,11 @@ class GitHubSignupViewController : ViewController {
             passwordValidation,
             repeatPasswordValidation,
             signingProcess
-        ) { un, p, pr, signingState in
-            return (un.valid ?? false) && (p.valid ?? false) && (pr.valid ?? false) && signingState != SignupState.SigningUp
+        ) { username, password, repeatPassword, signingState in
+            return (username.valid ?? false) &&
+                   (password.valid ?? false) &&
+                   (repeatPassword.valid ?? false) &&
+                   signingState != SignupState.SigningUp
         }
         
         bindValidationResultToUI(
@@ -220,15 +247,17 @@ class GitHubSignupViewController : ViewController {
                 }
             }
             .addDisposableTo(disposeBag)
+
     }
    
     // This is one of the reasons why it's a good idea for disposal to be detached from allocations.
     // If resources weren't disposed before view controller is being deallocated, signup alert view
-    // could be presented on top of wrong screen or crash your app if it was being presented while
-    // navigation stack is popping.
+    // could be presented on top of the wrong screen or could crash your app if it was being presented 
+    // while navigation stack is popping.
+    
     // This will work well with UINavigationController, but has an assumption that view controller will
-    // never be readded as a child view controller.
-    // It it was readded UI wouldn't be bound anymore.
+    // never be added as a child view controller. If we didn't recreate the dispose bag here,
+    // then our resources would never be properly released.
     override func willMoveToParentViewController(parent: UIViewController?) {
         if let parent = parent {
             assert(parent.isKindOfClass(UINavigationController), "Please read comments")

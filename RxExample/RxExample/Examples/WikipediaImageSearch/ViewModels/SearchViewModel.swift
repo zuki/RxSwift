@@ -15,14 +15,14 @@ import RxCocoa
 class SearchViewModel {
     
     // outputs
-    let rows: Observable<[SearchResultViewModel]>
+    let rows: Driver<[SearchResultViewModel]>
     
     let subscriptions = DisposeBag()
 
     // public methods
     
-    init(searchText: Observable<String>,
-        selectedResult: Observable<SearchResultViewModel>) {
+    init(searchText: Driver<String>,
+        selectedResult: Driver<SearchResultViewModel>) {
         
         let $: Dependencies = Dependencies.sharedDependencies
         let wireframe = Dependencies.sharedDependencies.wireframe
@@ -31,13 +31,13 @@ class SearchViewModel {
         self.rows = searchText
             .throttle(0.3, $.mainScheduler)
             .distinctUntilChanged()
-            .map { query in
+            .flatMapLatest { query in
                 API.getSearchResults(query)
                     .retry(3)
+                    .retryOnBecomesReachable([], reachabilityService: ReachabilityService.sharedReachabilityService)
                     .startWith([]) // clears results on new search term
-                    .catchErrorJustReturn([])
+                    .asDriver(onErrorJustReturn: [])
             }
-            .switchLatest()
             .map { results in
                 results.map {
                     SearchResultViewModel(
@@ -47,7 +47,7 @@ class SearchViewModel {
             }
         
         selectedResult
-            .subscribeNext { searchResult in
+            .driveNext { searchResult in
                 wireframe.openURL(searchResult.searchResult.URL)
             }
             .addDisposableTo(subscriptions)

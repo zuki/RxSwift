@@ -48,7 +48,10 @@ class ScheduledItem<T> : ScheduledItemProtocol {
 }
 
 
-class VirtualTimeSchedulerBase : SchedulerType, CustomStringConvertible {
+class VirtualTimeSchedulerBase
+    : SchedulerType
+    , CustomDebugStringConvertible {
+
     typealias TimeInterval = Int
     typealias Time = Int
     
@@ -58,12 +61,6 @@ class VirtualTimeSchedulerBase : SchedulerType, CustomStringConvertible {
     var now: Time {
         get {
             return self.clock
-        }
-    }
-    
-    var description: String {
-        get {
-            return self.schedulerQueue.description
         }
     }
     
@@ -96,32 +93,6 @@ class VirtualTimeSchedulerBase : SchedulerType, CustomStringConvertible {
         }
         
         let item = ScheduledItem(action: action, state: state, time: scheduleTime)
-        
-        schedulerQueue.append(item)
-        
-        compositeDisposable.addDisposable(item)
-        
-        return compositeDisposable
-    }
-    
-    func schedulePeriodic<StateType>(state: StateType, startAfter: TimeInterval, period: TimeInterval, action: (StateType) -> StateType) -> Disposable {
-        let compositeDisposable = CompositeDisposable()
-        
-        let scheduleTime: Int
-        if startAfter <= 0 {
-            scheduleTime = self.now + 1
-        }
-        else {
-            scheduleTime = self.now + startAfter
-        }
-        
-        let item = ScheduledItem(action: { [unowned self] state in
-            if compositeDisposable.disposed {
-                return NopDisposable.instance
-            }
-            let nextState = action(state)
-            return self.schedulePeriodic(nextState, startAfter: period, period: period, action: action)
-        }, state: state, time: scheduleTime)
         
         schedulerQueue.append(item)
         
@@ -174,5 +145,13 @@ class VirtualTimeSchedulerBase : SchedulerType, CustomStringConvertible {
         }
         
         return minElement
+    }
+}
+
+extension VirtualTimeSchedulerBase {
+    var debugDescription: String {
+        get {
+            return self.schedulerQueue.description
+        }
     }
 }

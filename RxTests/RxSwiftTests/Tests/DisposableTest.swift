@@ -52,7 +52,7 @@ class DisposableTest : RxTest {
             ])
         
         let res = scheduler.start(400) { () -> Observable<Int> in
-            return xs
+            return xs.asObservable()
         }
         
         XCTAssertEqual(res.messages, [
@@ -122,5 +122,51 @@ class DisposableTest : RxTest {
 
         XCTAssertEqual(numberDisposed, 2)
         XCTAssertEqual(compositeDisposable.count, 0)
+    }
+    
+    func testRefCountDisposable_RefCounting() {
+        let d = BooleanDisposable()
+        let r = RefCountDisposable(disposable: d)
+        
+        XCTAssertEqual(r.disposed, false)
+        
+        let d1 = r.retain()
+        let d2 = r.retain()
+        
+        XCTAssertEqual(d.disposed, false)
+        
+        d1.dispose()
+        XCTAssertEqual(d.disposed, false)
+        
+        d2.dispose()
+        XCTAssertEqual(d.disposed, false)
+        
+        r.dispose()
+        XCTAssertEqual(d.disposed, true)
+        
+        let d3 = r.retain();
+        d3.dispose()
+    }
+    
+    func testRefCountDisposable_PrimaryDisposesFirst() {
+        let d = BooleanDisposable()
+        let r = RefCountDisposable(disposable: d)
+        
+        XCTAssertEqual(r.disposed, false)
+        
+        let d1 = r.retain()
+        let d2 = r.retain()
+        
+        XCTAssertEqual(d.disposed, false)
+        
+        d1.dispose()
+        XCTAssertEqual(d.disposed, false)
+        
+        r.dispose()
+        XCTAssertEqual(d.disposed, false)
+        
+        d2.dispose()
+        XCTAssertEqual(d.disposed, true)
+        
     }
 }

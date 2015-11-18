@@ -58,13 +58,8 @@ class GitHubAPI {
         
         })
         return self.URLSession.rx_response(request)
-            .map { (maybeData, maybeResponse) in
-                if let response = maybeResponse as? NSHTTPURLResponse {
-                    return response.statusCode == 404
-                }
-                else {
-                    return false
-                }
+            .map { (maybeData, response) in
+                return response.statusCode == 404
             }
             .observeOn(self.dataScheduler)
             .catchErrorJustReturn(false)
@@ -73,8 +68,8 @@ class GitHubAPI {
     func signup(username: String, password: String) -> Observable<SignupState> {
         // this is also just a mock
         let signupResult = SignupState.SignedUp(signedUp: arc4random() % 5 == 0 ? false : true)
-        return [just(signupResult), never()]
-            .concat()
+        return just(signupResult)
+            .concat(never())
             .throttle(2, MainScheduler.sharedInstance)
             .startWith(SignupState.SigningUp)
     }

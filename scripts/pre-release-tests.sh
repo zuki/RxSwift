@@ -3,7 +3,7 @@
 TV_OS=0
 RELEASE_TEST=0
 
-if [ `xcodebuild -showsdks | grep tvOS | wc -l` -ge 4 ]; then
+if [ `xcodebuild -showsdks | grep tvOS | wc -l` -gt 0 ]; then
 	printf "${GREEN}tvOS found${RESET}\n"
 	TV_OS=1
 fi
@@ -112,6 +112,10 @@ do
 		rx ${scheme} ${configuration} "" build
 	done
 done
+
+# compile and run playgrounds
+
+. scripts/playgrounds.sh
 
 if [ "${RELEASE_TEST}" -eq 1 ]; then
 	mdast -u mdast-slug -u mdast-validate-links ./*.md

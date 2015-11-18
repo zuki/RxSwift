@@ -45,7 +45,7 @@ example("combineLatest 1") {
     let intOb1 = PublishSubject<String>()
     let intOb2 = PublishSubject<Int>()
 
-    combineLatest(intOb1, intOb2) {
+    _ = combineLatest(intOb1, intOb2) {
         "\($0) \($1)"
         }
         .subscribe {
@@ -68,7 +68,7 @@ example("combineLatest 2") {
     let intOb1 = just(2)
     let intOb2 = sequenceOf(0, 1, 2, 3, 4)
 
-    combineLatest(intOb1, intOb2) {
+    _ = combineLatest(intOb1, intOb2) {
             $0 * $1
         }
         .subscribe {
@@ -85,11 +85,44 @@ example("combineLatest 3") {
     let intOb2 = sequenceOf(0, 1, 2, 3)
     let intOb3 = sequenceOf(0, 1, 2, 3, 4)
 
-    combineLatest(intOb1, intOb2, intOb3) {
-        ($0 + $1) * $2
+    _ = combineLatest(intOb1, intOb2, intOb3) {
+            ($0 + $1) * $2
         }
         .subscribe {
             print($0)
+        }
+}
+
+
+
+//: Combinelatest version that allows combining sequences with different types.
+
+example("combineLatest 4") {
+    let intOb = just(2)
+    let stringOb = just("a")
+    
+    _ = combineLatest(intOb, stringOb) {
+            "\($0) " + $1
+        }
+        .subscribe {
+            print($0)
+    }
+}
+
+
+//: `combineLatest` extension method for Array of `ObservableType` conformable types
+//: The array must be formed by `Observables` of the same type.
+
+example("combineLatest 5") {
+    let intOb1 = just(2)
+    let intOb2 = sequenceOf(0, 1, 2, 3)
+    let intOb3 = sequenceOf(0, 1, 2, 3, 4)
+    
+    _ = [intOb1, intOb2, intOb3].combineLatest { intArray -> Int in
+            Int((intArray[0] + intArray[1]) * intArray[2])
+        }
+        .subscribe { (event: Event<Int>) -> Void in
+            print(event)
         }
 }
 
@@ -108,7 +141,7 @@ example("zip 1") {
     let intOb1 = PublishSubject<String>()
     let intOb2 = PublishSubject<Int>()
 
-    zip(intOb1, intOb2) {
+    _ = zip(intOb1, intOb2) {
         "\($0) \($1)"
         }
         .subscribe {
@@ -132,7 +165,7 @@ example("zip 2") {
 
     let intOb2 = sequenceOf(0, 1, 2, 3, 4)
 
-    zip(intOb1, intOb2) {
+    _ = zip(intOb1, intOb2) {
             $0 * $1
         }
         .subscribe {
@@ -146,7 +179,7 @@ example("zip 3") {
     let intOb2 = sequenceOf(0, 1, 2, 3)
     let intOb3 = sequenceOf(0, 1, 2, 3, 4)
 
-    zip(intOb1, intOb2, intOb3) {
+    _ = zip(intOb1, intOb2, intOb3) {
             ($0 + $1) * $2
         }
         .subscribe {
@@ -170,7 +203,7 @@ example("merge 1") {
     let subject1 = PublishSubject<Int>()
     let subject2 = PublishSubject<Int>()
 
-    sequenceOf(subject1, subject2)
+    _ = sequenceOf(subject1, subject2)
         .merge()
         .subscribeNext { int in
             print(int)
@@ -190,7 +223,7 @@ example("merge 2") {
     let subject1 = PublishSubject<Int>()
     let subject2 = PublishSubject<Int>()
 
-    sequenceOf(subject1, subject2)
+    _ = sequenceOf(subject1, subject2)
         .merge(maxConcurrent: 2)
         .subscribe {
             print($0)

@@ -1,9 +1,9 @@
 Pod::Spec.new do |s|
   s.name             = "RxBlocking"
-  s.version          = "2.0.0-alpha.4"
+  s.version          = "2.0.0-beta.3"
   s.summary          = "RxSwift Blocking operatos"
   s.description      = <<-DESC
-                        Set of blocking operators for unit testing
+                        Set of blocking operators for RxSwift.
                         DESC
   s.homepage         = "https://github.com/ReactiveX/RxSwift"
   s.license          = 'MIT'
@@ -19,5 +19,5 @@ Pod::Spec.new do |s|
 
   s.source_files          = 'RxBlocking/**/*.swift'
 
-  s.dependency 'RxSwift', '~> 2.0.0-alpha'
+  s.dependency 'RxSwift', '~> 2.0.0-beta'
 end

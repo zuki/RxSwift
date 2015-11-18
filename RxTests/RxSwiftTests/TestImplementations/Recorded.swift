@@ -8,8 +8,9 @@
 
 import Foundation
 import RxSwift
+import Swift
 
-struct Recorded<Element : Equatable> : CustomStringConvertible, Equatable {
+struct Recorded<Element : Equatable> : CustomDebugStringConvertible, Equatable {
     let time: Time
     let event: Event<Element>
     
@@ -30,8 +31,10 @@ struct Recorded<Element : Equatable> : CustomStringConvertible, Equatable {
             }
         }
     }
-    
-    var description: String {
+}
+
+extension Recorded {
+    var debugDescription: String {
         get {
             return "\(event) @ \(time)"
         }
@@ -43,14 +46,3 @@ func == <T: Equatable>(lhs: Recorded<T>, rhs: Recorded<T>) -> Bool {
 }
 
 
-// workaround for swift compiler bug
-struct EquatableArray<Element: Equatable> : Equatable {
-    let elements: [Element]
-    init(_ elements: [Element]) {
-        self.elements = elements
-    }
-}
-
-func == <E: Equatable>(lhs: EquatableArray<E>, rhs: EquatableArray<E>) -> Bool {
-    return lhs.elements == rhs.elements
-}

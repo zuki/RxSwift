@@ -33,21 +33,16 @@ public class WikipediaSearchCell: UITableViewCell {
         didSet {
             let disposeBag = DisposeBag()
 
-            (viewModel?.title ?? just(""))
-                .subscribe(self.titleOutlet.rx_text)
+            (viewModel?.title ?? Drive.just(""))
+                .drive(self.titleOutlet.rx_text)
                 .addDisposableTo(disposeBag)
 
             self.URLOutlet.text = viewModel.searchResult.URL.absoluteString ?? ""
 
             viewModel.imageURLs
-                .bindTo(self.imagesOutlet.rx_itemsWithCellIdentifier("ImageCell")) { [unowned self] (_, URL, cell: CollectionViewImageCell) in
-                        let loadingPlaceholder: UIImage? = nil
-
-                        cell.image = self.imageService.imageFromURL(URL)
-                            .map { $0 as UIImage? }
-                            .catchErrorJustReturn(nil)
-                            .startWith(loadingPlaceholder)
-                    }
+                .drive(self.imagesOutlet.rx_itemsWithCellIdentifier("ImageCell")) { [unowned self] (_, URL, cell: CollectionViewImageCell) in
+                    cell.downloadableImage = self.imageService.imageFromURL(URL)
+                }
                 .addDisposableTo(disposeBag)
 
             self.disposeBag = disposeBag
@@ -62,4 +57,5 @@ public class WikipediaSearchCell: UITableViewCell {
 
     deinit {
     }
+
 }
