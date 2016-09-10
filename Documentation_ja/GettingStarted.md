@@ -1,25 +1,24 @@
 入門
-===============
-
-このプロジェクトは[ReactiveX.io](http://reactivex.io/)と調和しようとします。
+==============
+RxSwiftは[ReactiveX.io](http://reactivex.io/)と調和するよう心がけています。
 一般的なクロスプラットフォームのマニュアルとチュートリアルは`RxSwift`でも有効です。
 
 1. [Observablesまたの名をSequences](#observablesまたの名をsequences)
-1. [Disposing](#disposing)
+1. [廃棄(Disposing)](#破棄 Disposing)
 1. [暗黙的な `Observable` の保証](#暗黙的な-observable-の保証)
-1. [初めて作る `Observable` (またの名を observable sequence)](#初めて作る-observable-またの名を-observable-sequence)
-1. [仕事をする `Observable` を作る](#仕事をする-observable-を作る)
+1. [初めての `Observable` (observable sequence)の作成](#初めての-observable-aka-observable-sequenceの作成)
+1. [動作する `Observable` の作成](#動作する-observable-の作成)
 1. [共有サブスクリプションと `shareReplay` オペレーター](#共有サブスクリプションと-sharereplay-オペレーター)
 1. [オペレーター](#オペレーター)
 1. [Playgrounds](#playgrounds)
 1. [カスタムオペレーター](#カスタムオペレーター)
 1. [エラーハンドリング](#エラーハンドリング)
-1. [コンパイルエラーをデバッグする](#コンパイルエラーをデバッグする)
-1. [デバッグする](#デバッグする)
-1. [メモリリークをデバッグする](#メモリリークをデバッグする)
+1. [コンパイルエラーのデバッグ](#コンパイルエラーのデバッグ)
+1. [デバッグ](#デバッグ)
+1. [メモリリークのデバッグ](#メモリリークのデバッグ)
 1. [KVO](#kvo)
 1. [UIレイヤーのコツ](#uiレイヤーのコツ)
-1. [HTTPリクエストを作る](#httpリクエストを作る)
+1. [HTTPリクエストの作成](#HTTPリクエストの作成)
 1. [RxDataSources](#rxdatasources)
 1. [Driver](Units.md#driver-unit)
 1. [実例](Examples.md)
@@ -27,56 +26,61 @@
 # Observablesまたの名をSequences
 
 ## 基本
-オブサーバーパターン(`Observable<Element>`)の等価性とシーケンス(`Generator`s)はRxを理解するために最も重要なものの一つです。
 
-オブサーバーパターンは非同期の振る舞いをモデル化するのに必要とされています。
-その等価性は`Observable`の操作のような高レベルなシーケンス操作の実装を可能にします。
+オブサーバーパターン(`Observable<Element>`シーケンス)と通常のシーケンス(`SequenceType`)が等価であることはRxを理解する上で最も重要です。
+
+**すべての`Observable`は単なるシーケンスです。`Observable`がSwiftの`SequenceType`に対する第一の利点は、要素を非同期に受けとることもできる点です。これがRxSwiftの肝です。以下のドキュメントはこのアイデアをさらに詳しく説明する以下の諸点に関するものです。**
+
+- `Observable` (`ObservableType`)は`SequenceType`と等価である。
+- `ObservableType.subscribe`メソッドは`SequenceType.generate`メソッドと投下である。
+- シーケンス要素を受け取るためには、返されたジェネレーターの`next()`を呼ぶのではなく、オブザーバー(コールバック)を`ObservableType.subcribe`に渡す必要がある。
 
 シーケンスはシンプルで、 **可視化するのが簡単な** おなじみの概念です。
 
-人は大きな視覚野を持つ生き物です。私たちはコンセプトを簡単に視覚化できた時、それについて推論することがより容易になります。
+人は大きな視覚野を持つ生き物です。概念が簡単に視覚化できればそれを容易に理解することができます。
 
-すべてのRxオペレーター内部のシーケンスの高レベル操作上のイベントステートマシンをシミュレートしようとすることによる多くの認知的負荷を取り除くことができます。
-もしRxを使わないで非同期システムをモデル化するとしたら、それはおそらく私達のコードは完全なステートマシンとテンポラリステートを持ち、
-抽象化を脇に置いて代わりにシミュレートする必要があることを意味します。
+Rxオペレーター内部のイベントステートマシンをシミュレートしようとする際に発生する多くの認知的負荷を取り除き、シーケンスに対する高レベルな操作に置き換えることができます。
+
+もしRxを使わずに非同期システムをモデル化するとしたらそれはおそらく私達のコードが、抽象化ではなくシミュレートのために必要なステートマシンや過渡的状態に満ちたものになることを意味します。
 
 リストとシーケンスはおそらく数学者とプログラマが最初に学ぶ概念です。
 
-ここに番号を振ったシーケンスがあります:
+これは数字のシーケンスです:
 
 ```
 --1--2--3--4--5--6--| // 正常終了
 ```
 
-他に文字を振ったシーケンスがあります:
+文字のシーケンスもあります:
 
 ```
 --a--b--a--a--a---d---X // エラーで終了
 ```
 
-いくつかのシーケンスは有限でその他は無限です。ボタンタップのシーケンスのように:
+シーケンスには有限なものもあれば、ボタンタップのシーケンスのように無限なものもあります:
 
 ```
 ---tap-tap-------tap--->
 ```
 
-これらはマーブルダイアグラムと呼ばれます。もっと知りたければ[rxmarbles.com](http://rxmarbles.com)を参照してください。
+これらはマーブルダイアグラムと呼ばれます。他にもマーブルダイアグ無はたくさん存在します。[rxmarbles.com](http://rxmarbles.com)を参照してください。
 
-もし正規表現でシーケンス文法を指定するとしたらこうなるでしょう:
+シーケンス文法を正規表現で指定するとしたら次のようになるでしょう:
+
 **Next* (Error | Completed)?**
 
 これは下記のことを述べています:
 
 * **シーケンスは0以上の要素を持つことができる**
-* **一度 `Error` または `Completed` イベントを受信すると、シーケンスは他の要素を作り出すことができない**
+* **一度 `Error` または `Completed` イベントを受信すると、シーケンスはそれ以上要素を作り出すことができない**
 
-Rxのシーケンスはプッシュインターフェースによって記述されます。(通称コールバック)
+Rxのシーケンスはプッシュインターフェース(通称コールバック)によって記述されます。
 
 ```swift
 enum Event<Element>  {
-    case Next(Element)      // next element of a sequence
-    case Error(ErrorType)   // sequence failed with error
-    case Completed          // sequence terminated successfully
+    case Next(Element)      // シーケンスの次の要素
+    case Error(ErrorType)   // シーケンスはエラーで機能不全
+    case Completed          // シーケンスは成功裏に終了
 }
 
 class Observable<Element> {
@@ -88,27 +92,27 @@ protocol ObserverType {
 }
 ```
 
-**シーケンスが `Complete` または `Error` イベントを送信するとシーケンス要素を計算しすべての内部リソースを解放します。**
+**シーケンスが `Complete` または `Error` イベントを送信するとシーケンス要素を計算するためのすべての内部リソースは解放されます。**
 
-**シーケンス要素の生産をキャンセルしてすぐにリソースを解放するには、返されたサブスクリプションで`dispose`を呼び出してください。**
+**シーケンス要素の生産をキャンセルして直ちにリソースを解放するには、返されたサブスクリプションの `dispose`を呼び出してください。**
 
-シーケンスが有限時間で終了するなら、`dispose` をコールしたり `addDisposableTo(disposeBag)` を使用しなくても永続的なリソースリークが発生することはありません。
-しかしながら、それらのリソースはシーケンスが完了するか要素の生産を終了するかエラーを返すまで利用されます。
+シーケンスが有限時間で終了する場合は、`dispose` をコールしたり `addDisposableTo(disposeBag)` を使用しなくても永続的なリソースリークが発生することはありません。
+しかしながら、それらのリソースはシーケンスが完了するか、要素の生産を終了するか、エラーを返すまで利用されます。
 
-もしシーケンスがいずれかの方法で終了しない場合、手動で`dispose`するか、自動的に内部の`disposeBag`、`takeUntil`が呼び出されるか、または他の方法を用いない限りリソースは永久に割り当てられたままになるでしょう。
+もしシーケンスが何らかの理由で終了しない場合、`dispose`を手動で呼び出すか、`disposeBag`や`takeUntil`またはなんかの方法の中で自動的に呼び出されないと、リソースは永久に割り当てられたままになります。
 
-**dispose bagsまたは`takeUntil`操作を用いるのはリソースのクリーンアップを確実にする堅牢な方法です。
-プロダクションではシーケンスが有限時間で終了する場合でもそれらを使うことを推奨します。**
+**dispose bagsまたは`takeUntil`オペレータの使用は、リソースを確実にクリーンアップするロバストな方法です。
+プロダクション環境ではたとえシーケンスが有限時間で終了する場合でもこれらを使うことを推奨します。**
 
-なぜ`ErrorType`がジェネリックでないのか興味があるなら、[ここ](DesignRationale.md#why-error-type-isnt-generic)で説明を見つけられます。
+`ErrorType`がなぜジェネリックでないのか不思議に思った方は、[ここ](DesignRationale.md#why-error-type-isnt-generic)に説明があります。
 
-## 破棄する -Disposing-
+## 破棄 Disposing
 
-オブサーブされたシーケンスを終了することができる一つの追加の方法があります。
-シーケンスを実行した時、または今後の要素を計算するために割り当てられた全てのリソースを解放したい時に、
-サブスクリプションに`dispose`を呼び出すことができます。
+オブサーブされたシーケンスを終了できるもう一つの方法があります。
+シーケンスの利用が終わり、次の要素を計算するために割り当てられた全てのリソースを解放したい時は、
+サブスクリプションの`dispose`を呼び出すことができます。
 
-これは`interval`オペレーターの例です。
+次は`interval`オペレーターの例です。
 
 ```swift
 let subscription = Observable<Int>.interval(0.3, scheduler: scheduler)
@@ -122,7 +126,7 @@ subscription.dispose()
 
 ```
 
-これが表示されます:
+これは次のように出力します:
 
 ```
 0
@@ -133,29 +137,29 @@ subscription.dispose()
 5
 ```
 
-注意として通常は手動で`dispose`を実行する必要はありません。これは教育のためだけの例です。
-手動でdisposeを呼び出すと通常悪いコードの臭いがします。
+通常は手動で`dispose`を実行する必要はないことに注意してください。これは単なる教育用の例です。
+手動によるdisposeの呼び出しは通常悪いコードの臭いがします。
 サブスクリプションをdisposeするもっと良い方法があります。
-`DisposeBag`、`takeUntil`オペレーター、または他の機構を使うことです。
+`DisposeBag`や`takeUntil`オペレーター、または他の機構を使用することができます。
 
-それでは、このコードは`dispose`を呼んで実行した後に何かを表示できるでしょうか？
+ところでこのコードは`dispose`の呼出し後にも何かを表示できるでしょうか？
 答えはケースバイケースです。
 
-* もし`scheduler`が **シリアルスケジューラ** (例. `MainScheduler`)である、<br>または`dispose`が **同じシリアルスケジューラ上で**実行された場合、答えは **no** です。
-* その他なら **yes** です。
+* `scheduler`が **シリアルスケジューラ** (例. `MainScheduler`)で、`dispose`が **同じシリアルスケジューラ上で**実行された場合、答えは **no** です。
+* その他の場合は **yes** です。
 
-スケジューラについて更に知りたいなら[ここ](Schedulers.md)で見つけられます。
+スケジューラについて更に知りたい場合は[ここ](Schedulers.md)を見てください。
 
-あなたは単に並列に発生している2つのプロセスを持っています。
+並列に実行している次の2つのプロセスがあるとします。
 
-* 一つの要素を生成しています
-* 他はサブスクリプションをdisposeしています
+* 一つは要素を生成している
+* もう一つはサブスクリプションをdisposeしている
 
-このケースでは質問"後で何か表示できるか？"は意味がありません、プロセスは別のスケジューラ上にあります。
+この2つのプロセスが異なるスケジュラー上にある場合は、先の質問「後で何か表示できるか？」はまったく意味がありません。
 
-念のため[ここ](Schedulers.md)に`observeOn`を説明した例が少しあります。
+念のためもう少し例を示します（`observeOn`に関しては[ここ](Schedulers.md)で説明されています）。
 
-この場合はこんな感じです:
+次のような場合です:
 
 ```swift
 let subscription = Observable<Int>.interval(0.3, scheduler: scheduler)
@@ -172,7 +176,7 @@ subscription.dispose() // メインスレッドから呼ばれる
 
 **`dispose`呼び出しが返った後は何も表示されません。それは保証されています。**
 
-やはり、この場合でも:
+また、次の場合も:
 
 ```swift
 let subscription = Observable<Int>.interval(0.3, scheduler: scheduler)
@@ -191,25 +195,25 @@ subscription.dispose() // 同じ`serialScheduler`で実行している
 
 ### Dispose Bags
 
-RxでDispose bagsはARCのような振る舞いに用いられます。
+Dispose bagsはRxにARCライクな振る舞いを返すのに用いられます。
 
-`DisposeBag`が解放される時、それはそれぞれ追加されたdisposableの`dispose`を呼び出します。
+`DisposeBag`が解放される時、追加されたdisposableの各々について`dispose`を呼び出します。
 
-これは`dispose`メソッドを持っておらず従って故意に明示的なdiposeの呼び出しはできません。
-もし直接クリーンアップする必要があるなら、新しいbagを作成することができます。
+`DisposeBag`は`dispose`メソッドを持っていないので、故意に明示的にdiposeを呼び出すことはできません。
+直ちにクリーンアップする必要がある場合は、新しいbagを作成するだけです。
 
 ```swift
   self.disposeBag = DisposeBag()
 ```
 
-これは古い参照のクリアしリソースを破棄を引き起こします。
+これは古い参照をクリアするので、それによりリソースの破棄を引き起こします。
 
-もしまだ明示的な手動の破棄を望んでいるなら、`CompositeDisposable`を使ってください。
-**これは望みどおりの動作をしますが、一度`dispose`メソッドが呼ばれるとそれはすぐに新たに追加した任意のdisposableを破棄します。**
+それでもまだ手動による明示的な破棄を望む場合は、`CompositeDisposable`を使ってください。
+**これは望みどおりの動作をしますが、一旦`dispose`メソッドが呼ばれると直ちに新たに追加されたすべてのdisposableを破棄します。**
 
 ### Take until
 
-追加の方法としてsubscriptionを自動的に破棄して解放するのに`takeUntil`オペレーターが使えます。
+開放時にサブリクションを自動的に破棄するもう一つの方法に、`takeUntil`オペレータの使用があります。
 
 ```swift
 sequence
@@ -221,15 +225,13 @@ sequence
 
 ## 暗黙的な `Observable` の保証
 
-全てのシーケンス作成者(`Observable`s)がもっとも尊重しなければならない幾つかの追加の保証があります。
+また、全てのシーケンス作成者(`Observable`)が順守しなければならない保証がいくつかあります。
 
-それはスレッドで要素を生成するのに重要ではありませんが、
-もし一つの要素を作成してオブサーバーに`observer.on(.Next(nextElement))`を送信しても、
-`observer.on`メソッドの実行が終わるまで次の要素に送信できません。
+要素の生成をどのスレッドを行うかは重要ではありませんが、一つの要素を生成してオブサーバに送信する `observer.on(.Next(nextElement))` 場合、`observer.on`メソッドの実行が終わるまでは、次の要素を送信できません。
 
-作成者はまた、この場合には`.Next`イベントが終了するまで`.Completed` または `.Error`の終了を送信できません。
+また、`.Next`イベントが終了するまでは、`.Completed` や `.Error` による終了を送信できません。
 
-手短に、この例で考察してください:
+手短に、次の例で考えます:
 
 ```swift
 someObservable
@@ -240,7 +242,7 @@ someObservable
   }
 ```
 
-これが常に表示されます:
+これは常に次のように表示し:
 
 ```
 Event processing started
@@ -251,7 +253,7 @@ Event processing started
 Event processing ended
 ```
 
-決してこうは表示されません:
+決して次のようには表示しません:
 
 ```
 Event processing started
@@ -260,20 +262,19 @@ Event processing ended
 Event processing ended
 ```
 
-## 初めて作る `Observable` (またの名を observable sequence)
+## 独自の `Observable` (またの名を observable sequence)の作成
 
-observableについて理解するために一つの重要なことがあります。
+observableを理解するために重要なことが一つあります。
 
-**observableが作られた時、それは作られただけなのでいかなる簡単な仕事も行いません。**
+**observableが作られても、作られたという理由だけで何らかの作業を行うことはありません。**
 
-たしかに`Observable`は多くの方法で作成できます。
-そのうち幾つかは副作用を引き起こし、そのうちいくつかはマウスイベントのタッピングなどのように既存の実行中プロセスに入り込みます。
+`Observable`はいろいろな方法で要素を作成できることは事実です。それらの中には副作用を引き起こすものもあれば、マウスイベントのタッピングなどのように既存の実行中プロセスに入り込むものもあります。
 
-**ただし`Observable`を返すメソッドを呼んだだけでは、一切シーケンスの生成は行われず副作用もありません。  
-`Observable`はどのようにシーケンスを生成するのかと要素の生成のために使われるパラメータが何かを定義するだけです。  
-シーケンスの生成が開始されるのは｀subscribe`メソッドを呼んだ時です。**
+**ただし`Observable`を返すメソッドを呼んだだけでは、シーケンスの生成は一切行われず副作用もありません。
+`Observable`はシーケンスをどのように生成するか、また要素の生成に使用されるパラメータが何であるかを定義するだけです。
+シーケンスの生成が開始されるのは `subscribe` メソッドが呼ばれた時です。**
 
-例. 例えば同様のプロトタイプを持つメソッドがあるとします。
+例えば、同様のプロトタイプを持つメソッドがあるとします。
 
 ```swift
 func searchWikipedia(searchTerm: String) -> Observable<Results> {}
@@ -282,22 +283,22 @@ func searchWikipedia(searchTerm: String) -> Observable<Results> {}
 ```swift
 let searchForMe = searchWikipedia("me")
 
-// 何の要求も実行されない、何の仕事もしない、何のURLリクエストも発っさない
+// リクエストは実行されていない、何の作業も実行されなていない、URLリクエストは発行さｒていない
+
 let cancel = searchForMe
-  // シーケンスの生成をすぐ始める、URLリクエストが発行される
+  // この段階でシーケンスの生成が開始され、URLリクエストが発行される
   .subscribeNext { results in
       print(results)
   }
 
 ```
 
-多くの方法であなた自身の`Observable`シーケンスを作ることができます。
-おそらく最も簡単な方法は`create`関数を使うことです。
+独自の`Observable`シーケンスを作成する方法はたくさん存在します。おそらく最も簡単な方法は`create`関数を使うことです。
 
 サブスクリプションに際して一つの要素を返すシーケンスを作る関数を作ってみましょう。
-この関数を'just'と呼びます。
+この関数は'just'と呼ばれます。
 
-*これは実際の実装です*
+*以下が実際の実装です*
 
 ```swift
 func myJust<E>(element: E) -> Observable<E> {
@@ -314,7 +315,7 @@ myJust(0)
     }
 ```
 
-これが表示されます:
+次のように表示されます:
 
 ```
 0
@@ -322,21 +323,17 @@ myJust(0)
 
 悪くないですね。でも`create`関数とは何でしょう？
 
-これはSwiftのクロージャを用いて`subscribe`メソッドを簡単に実装することができるただの便利なメソッドです。  
-`subscribe`メソッドと同様に一つの引数と`observer`を取り、disposableを返します。
+それはSwiftのクロージャを用いて`subscribe`メソッドを簡単に実装できるようにする単なる便利なメソッドです。
+`subscribe`メソッドと同様に、一つの引数 `observer`を取り、disposableを返します。
 
-> Sequence implemented this way is actually synchronous. It will generate elements and terminate before `subscribe` call returns disposable representing subscription. Because of that it doesn't really matter what disposable it returns, process of generating elements can't be interrupted.
+この方法で実装したシーケンスは実は同期的です。要素を生成し、`subscribe`コールがsubscriptionを表すdisposableを返す前に終了します。そのため、どのようなdisposableを返すかは実際は問題ではありません。要素を生成するプロセスは中断されることはありません。
 
-この方法で実装したシーケンスは実際に同期します。
-それは要素を生成し、`subscribe`を呼び出してsubscriptionを表すdisposableを返した後に終了します。
-そのことからこれは本当に問題です、それが返すdisposableは生成した要素の処理を中断できません。
-
-同期的なシーケンスを生成する時、一般的なdisposableは`NopDisposable`のシングルトンインスタンスを返します。
+同期的なシーケンスを生成する場合、通常、`NopDisposable`のシングルトンインスタンスをdisposableとして返します。
 
 
-これから配列から要素を返すobservableを作ってみましょう。
+次に、配列から要素を返すobservableを作ってみましょう。
 
-*これは実際の実装です*
+*以下が実際の実装です*
 
 ```swift
 func myFrom<E>(sequence: [E]) -> Observable<E> {
@@ -371,7 +368,7 @@ stringCounter
 print("Ended ----")
 ```
 
-これが表示されます:
+次のように表示されます:
 
 ```
 Started ----
@@ -383,11 +380,11 @@ second
 Ended ----
 ```
 
-## 仕事をする `Observable` を作る
+## 仕事をする `Observable` の作成
 
-それではもっと面白くしていきます。前回の例を用いて`interval`オペレーターを作成してみましょう。
+それではもっと面白くしていきます。前回の例で使用した`interval`オペレーターを作成してみましょう。
 
-*これはディスパッチキュースケジューラと同等の実際の実装です。*
+*以下ははディスパッチキュースケジューラと同等の実際の実装です。*
 
 ```swift
 func myInterval(interval: NSTimeInterval) -> Observable<Int> {
@@ -434,7 +431,7 @@ subscription.dispose()
 print("Ended ----")
 ```
 
-これが表示されます:
+次のように表示されます:
 
 ```
 Started ----
@@ -448,7 +445,7 @@ Disposed
 Ended ----
 ```
 
-こう書くとどうなるでしょう
+次にように書くとどうなるでしょう
 
 ```swift
 let counter = myInterval(0.1)
@@ -475,7 +472,7 @@ subscription2.dispose()
 print("Ended ----")
 ```
 
-こう表示されるでしょう:
+次のように表示されるでしょう:
 
 ```
 Started ----
@@ -501,21 +498,20 @@ Disposed
 Ended ----
 ```
 
-**サブスクリプションする際にすべてのサブスクライバーは個別のシーケンスの要素を通常は生成します。  
-オペレーターはデフォルトではステートレスです。ステートフルよりも非常に多くのステートレスなオペレーターがあります。**
+**サブスクリプションのすべてのサブスクライバーは通常、各自別の要素シーケンスを生成します。
+オペレーターはデフォルトではステートレスです。ステートフルなオペレータよりもステートレスなオペレーターの方がはるかに多く存在します。**
 
 
-## 共有サブスクリプションと `shareReplay` オペレーター
+## サブスクリプションの共有と`shareReplay`オペレーター
 
-ではもし複数のobserverで一つだけのsubscriptionからのイベント(要素)を共有したいならどうしますか？
+ではもし一つのsubscriptionからのイベント(要素)を複数のobserverで共有したいならどうしますか？
 
-２つのものを定義する必要があります。
+以下の２つを定義する必要があります。
 
-* observeしているそれら(最新のリプレイだけ、すべてのリプレイ、最後のn個のリプレイ)の中で  
-  新しいサブスクライバーが興味を持つ過去の要素をハンドルする方法
-* 共有したサブスクリプションを発行するタイミングを決定する方法(参照カウント、手動またはいくらかの他のアルゴリズム)
+* 新たなサブスクライバーがオブザーブすることに興味を持つ前に受け取っていた過去の要素の扱い方(最新要素のみリプレイ、すべてリプレイ、最新n個のリプレイ)。
+* 共有化されたサブスクリプションを発行するタイミングの決定方法(参照カウント、手動またはその他のアルゴリズム)
 
-通常の選択は `replay(1).refCount()` 別名`shareReplay()` を組み合わせることです。
+通常の選択はこれらの組み合わせ `replay(1).refCount()`、すなわち `shareReplay()` です。
 
 ```swift
 let counter = myInterval(0.1)
@@ -543,7 +539,7 @@ subscription2.dispose()
 print("Ended ----")
 ```
 
-これが表示されます:
+次のように表示されます:
 
 ```
 Started ----
@@ -568,11 +564,11 @@ Disposed
 Ended ----
 ```
 
-今は`Subscribed`と`Disposed`イベントが一つだけあることに注目してください。
+今度はなぜか`Subscribed`と`Disposed`イベントが一つしかないことに注目してください。
 
-URL observableと同等の振る舞いです。
+URL observableの振る舞いも同じです。
 
-これはRxでHTTPリクエストをラップする方法です。これは`interval`オペレーターにかなり似ているパターンです。
+以下はHTTPリクエストをRxでラップする方法です。`interval`オペレーターと大体同じパターンです。
 
 ```swift
 extension NSURLSession {
@@ -609,28 +605,25 @@ RxSwiftには多数のオペレーターが実装されています。完全な�
 
 全てのオペレーターのマーブルダイアグラムは[ReactiveX.io](http://reactivex.io/)で見ることができます。
 
-ほとんど全てのオペレーターのデモは[Playgrounds](../Rx.playground)の中にあります。
+ほとんど全てのオペレーターのデモは[Playgrounds](../Rx.playground)で見ることができます。
 
-Playgroundを使うときは`Rx.xcworkspace`を開いて、`RxSwift-OSX`スキーマをビルドしてから`Rx.xcworkspace`ツリービューのPlaygroundを開いてください。
+Playgroundを使うには、`Rx.xcworkspace`を開いて、`RxSwift-OSX`スキーマをビルドし、`Rx.xcworkspace`ツリービューのPlaygroundを開いてください。
 
-もしオペレーターが必要な場合に、その見つけ方が分からないなら[オペレーターの決定木](http://reactivex.io/documentation/operators.html#tree)があります。
+あるオペレーターが必要だが、その見つけ方が分からない場合は[オペレーターの決定木](http://reactivex.io/documentation/operators.html#tree)を見てください。
 
-[RxSwiftがサポートしているオペレーター](API.md#rxswift-supported-operators)ではそれらを実行する機能別にグループ分けしているので助けになります。
+[RxSwiftがサポートしているオペレーター](API.md#rxswift-supported-operators)では探しやすいように、各オペレータが機能別にグループ分けされています。
 
 ### カスタムオペレーター
 
-2つの方法でカスタムオペレーターを作成することができます。
+カスタムオペレーターの作成には2つの方法があります。
 
 #### 簡単な方法
 
-全ての内部コードは非常に最適化されたバージョンのオペレーターを使用します、
-そのためそれらはチュートリアルに最適な題材ではありません。
-それが標準的なオペレーターを使用することを大いに推奨する理由です。
+全ての内部コードは高度に最適化されたバージョンのオペレーターを使用しているので、チュートリアルに最適な題材ではありません。これは標準的なオペレーターの使用を大いに推奨する理由です。
 
-幸運なことに簡単にオペレーターを作る方法があります。
-新しいオペレーターを作ることは実際は全てobservableを作ることで、前章で既にその方法を記述しました。
+幸運なことにオペレーターを作成する簡単な方法があります。実際、新たなオペレーターの作成は、observableの作成にほかなりません。それを行う方法は前章ですでに記述しています。
 
-最適化されていないmapオペレーターを実装できる方法を見てみましょう。
+最適化されていないmapオペレーターをどのように実装できるか見てみましょう。
 
 ```swift
 extension ObservableType {
@@ -654,7 +647,7 @@ extension ObservableType {
 }
 ```
 
-このとおり、あなたのmapを使うことができます:
+これであなたのmapを使うことができます:
 
 ```swift
 let subscription = myInterval(0.1)
@@ -666,7 +659,7 @@ let subscription = myInterval(0.1)
     }
 ```
 
-そしてこれが表示されます
+そして次のように表示されます
 
 ```
 Subscribed
@@ -684,16 +677,16 @@ This is simply 8
 
 ### 人生いろいろあるけどなんとかなるさ -Life happens-
 
-カスタムオペレーターで解決するのが難しいいくつかの場合はどうしましょう？  
-あなたはRxモナドを終了して、命令的な世界の中でアクションを実行し、それからRxの結果のトンネルはまた`Subject`を使用できます。
+カスタムオペレーターで解決するには難しすぎる場合はどうしましょう？
+その場合は、Rxモナドを脱出して、命令的な世界の中でアクションを実行し、その結果を`Subject`を使って再びRxに戻すことができます。
 
-ほとんど実践することありませんし、悪いコードの臭いがしますがこれを実行することができます。
+これはしばしば行うべきものではありませんし悪いコードの臭いがしますが、とにかく実行することはできます。
 
 ```swift
   let magicBeings: Observable<MagicBeing> = summonFromMiddleEarth()
 
   magicBeings
-    .subscribeNext { being in     // Rxモナドを終了  
+    .subscribeNext { being in     // Rxモナドを脱出
         self.doSomeStateMagic(being)
     }
     .addDisposableTo(disposeBag)
@@ -710,7 +703,7 @@ This is simply 8
   // 別のごちゃごちゃ
   //
 
-  let kittens = Variable(firstKitten) // Rxモナドにまた戻る
+  let kittens = Variable(firstKitten) // 再びRxモナドに戻る
 
   kittens.asObservable()
     .map { kitten in
@@ -719,7 +712,7 @@ This is simply 8
     // ....
 ```
 
-あなたがこれを行うたびに、おそらく誰かがどこかにこのコードを書くでしょう
+あなたがこれを行うたびに、誰かがおそらくどこかで次のようなコードを書くでしょう
 
 ```swift
   kittens
@@ -729,17 +722,16 @@ This is simply 8
     .addDisposableTo(disposeBag)
 ```
 
-これは実行しないようにしてください。
+だから、これを実行しないようにしてください。
 
 ## Playgrounds
 
-もし一部のオペレーターの正確な働きに自信がなければ、
-[playgrounds](../Rx.playground)にほとんど全てのオペレーターの振る舞いをイラスト化する小さな例が含まれています。
+あるオペレーターが正確にどう動くか確信が持てない場合は、[playgrounds](../Rx.playground)を見れば、ほとんど全てのオペレーターについてそのの振る舞いを示す小さな例が用意されています。
 
-**Playgroundを使うときはRx.xcworkspaceを開いて、RxSwift-OSXスキーマをビルドしてからRx.xcworkspaceツリービューのPlaygroundを開いてください。**
+**Playgroundを使うには、Rx.xcworkspaceを開いて、RxSwift-OSXスキーマをビルドし、Rx.xcworkspaceツリービューのPlaygroundを開いてください。**
 
-**playgroundの例の結果を見るには、`Assistant Editor`を開いてください。
-`Assistant Editor`は`View > Assistant Editor > Show Assistant Editor`をクリックすれば開きます。**
+**playgroundに含まれている例の結果を見るには、`Assistant Editor`を開いてください。
+`Assistant Editor`を開くには、`View > Assistant Editor > Show Assistant Editor`をクリックしてください。**
 
 ## エラーハンドリング
 
@@ -747,19 +739,17 @@ This is simply 8
 
 ### observable内の非同期エラーハンドリング機構
 
-エラーハンドリングは非常に簡単です。もし一つのシーケンスがエラーで終了したら、
-そのあと全ての依存するシーケンスがエラーで終了します。それは通常短い論理回路です。
+エラーハンドリングは非常に簡単です。あるシーケンスがエラーで終了したら、それに依存する
+全てのシーケンスがエラーで終了します。それはよくある短絡論理です。
 
 catchオペレーターを使うことで失敗したobservableから復帰することができます。
-復帰の詳細を指定できるいろいろなオーバーロードがあります。
+復帰の詳細を指定できるさまざまなオーバーロードがあります。
 
-またエラーシーケンスの場合にはリトライを可能にする`retry`オペレーターもあります。
+またシーケンスにエラーが発生した場合にリトライを可能にする`retry`オペレーターも存在します。
 
-## コンパイルエラーをデバッグする
+## コンパイルエラーのデバッグ
 
-エレガントなRxSwift/RxCocoaコードを書く時、  
-おそらく`Observable`の型を推定するのにコンパイラに大きく依存するでしょう。  
-それはSwiftがすばらしい理由の一つですが、時々イライラさせられます。
+エレガントなRxSwift/RxCocoaコードを書く際に`Observable`の型の推定にはおそらくコンパイラを大いに頼りにしているでしょう。これはSwiftがいかにすばらしいかの理由の一つですが、時にイライラさせられます。
 
 ```swift
 images = word
@@ -772,8 +762,7 @@ images = word
       }
 ```
 
-もしコンパイラがこの式のどこかにエラーがあると報告してきたら、  
-私は最初の戻り値の型に注釈をつけることをお勧めします。
+もしコンパイラがこの式のどこかにエラーがあると報告してきたら、私はまず戻り値の型に注釈をつけることをお勧めします。
 
 ```swift
 images = word
@@ -786,7 +775,7 @@ images = word
       }
 ```
 
-もしこれが動かなければ、エラーの場所を突き止めるまで更に注釈をつけることを続けてください。
+これで動かなければ、エラーの場所を突き止めるまで更に注釈をつけることを続けてください。
 
 ```swift
 images = word
@@ -799,16 +788,16 @@ images = word
       }
 ```
 
-**私は最初に戻り値の型とクロージャの引数に注釈をつけることをお勧めします。**
+**まず戻り値の型とクロージャの引数に注釈をつけることをお勧めします。**
 
-通常エラーが解決した後、再びコードを綺麗にするため型の注釈を削除できます。
+通常、エラーを解決した後は、注釈を削除して再びコードを綺麗にすることができます。
 
-## デバッグする
+## デバッグ
 
-単独でデバッガを使用すると便利です、しかし通常`debug`オペレーターを使用するとより効果的になります。  
-`debug`オペレーターは全てのイベントを標準出力に出力します、そしてあなたはそれらのイベントにラベルを付けることができます。
+デバッガの使用だけでも便利ですが、`debug`オペレーターを使用すると通常より効率的になります。
+`debug`オペレーターは全てのイベントを標準出力に出力します、また、それらのイベントにラベルを付けることもできます。
 
-`debug`はプローブのように作用します。これはそれを使った例です:
+`debug`はプローブのように作用します。以下はこれを使った例です:
 
 ```swift
 let subscription = myInterval(0.1)
@@ -825,7 +814,7 @@ NSThread.sleepForTimeInterval(0.5)
 subscription.dispose()
 ```
 
-こう表示されます
+次のように表示されます
 
 ```
 [my probe] subscribed
@@ -844,7 +833,7 @@ This is simply 4
 Disposed
 ```
 
-また、簡単にあなたのバージョンの`debug`オペレーターを作成できます。
+また、独自バージョンの`debug`オペレーターも簡単に作成できます。
 
 ```swift
 extension ObservableType {
@@ -873,47 +862,46 @@ extension ObservableType {
  }
 ```
 
-## メモリリークをデバッグする
+## メモリリークのデバッグ
 
-デバッグモードではRxは全ての確保したリソースをグローバル変数`resourceCount`で追跡しています。
+Rxはデバッグモードでは全ての確保したリソースをグローバル変数`resourceCount`で追跡しています。
 
-いくつかのリソースリークを検出するロジックが欲しい場合、
-最もシンプルな方法は定期的に`RxSwift.resourceCount`を出力することです。
+リソースリークを検出するロジックが欲しい場合、最もシンプルな方法は定期的に `RxSwift.resourceCount` を出力することです。
 
 ```swift
-    /* add somewhere in
-    func application(application: UIApplication, didFinishLaunchingWithOptions launchOptions: [NSObject: AnyObject]?) -> Bool
-    */
+    /* func application(application: UIApplication, didFinishLaunchingWithOptions launchOptions: [NSObject: AnyObject]?) -> Bool
+     * のどこかに以下を追加
+     */
     _ = Observable<Int>.interval(1, scheduler: MainScheduler.instance)
         .subscribeNext { _ in
         print("Resource count \(RxSwift.resourceCount)")
     }
 ```
 
-メモリリークをテストする最も効果的な方法は:
+メモリリークをテストする最も効率的な方法は:
 
-* 画面に移動してそれを使用します
+* 画面に移動してそれを使用
 * navigate back
-* 初期リソース数を観察します
-* 画面に2度目の移動してそれを使用します
+* 最初のリソースカウントを記録
+* 再度画面に移動してそれを使用
 * navigate back
-* 最後のリソース数を観察します
+* 最後のリソースカウントを記録
 
 最初と最後でリソースカウントに差があった場合、どこかにメモリリークがあるかもしれません。
 
-2つのナビゲーションを提案している理由は最初のナビゲーションでlazyリソースが強制的に読み込まれるからです。
+ナビゲーションを2回行うことを提案している理由は、最初のナビゲーションでlazyリソースの読み込みが強制されるからです。
 
-## 変数
+## Variable
 
-`変数`はいくつかのobservableの状態を表しています。  
-値を含まない`変数`は存在しません。なぜならイニシャライザーに初期値が必要だからです。
+`Variable`はobservableの状態を表します。
+値を持たない`Variable`は存在しません。初期化関数が初期値を必要とするからです。
 
-変数は[`Subject`](http://reactivex.io/documentation/subject.html)をラップします。もっと具体的にはそれは`BehaviorSubject`です。  
-`BehaviorSubject`と異なり、それは値のインターフェースを晒すだけです、だから変数は決して終了または失敗できません。
+`Variable`は[`Subject`](http://reactivex.io/documentation/subject.html)をラップします。より正確に言えば`BehaviorSubject`をラップします。
+`BehaviorSubject`と異なり、Variableは値のインターフェースを晒すだけです。したがって、Variableは終了も失敗もすることはありません。
 
-それはまたサブスクリプション上の現在値をすぐにブロードキャストします。
+Variableはサブスクリプションに現在値を直ちにブロードキャストします。
 
-変数が解放された後、`.asObservable()`から返されたobservableシーケンスを完了します。
+Variableが解放されると、`.asObservable()`から返されたobservableシーケンスを終了させます。
 
 ```swift
 let variable = Variable(0)
@@ -945,7 +933,7 @@ variable.value = 2
 print("End ---")
 ```
 
-こう表示されます
+次のように表示されます
 
 ```
 Before first subscription ---
@@ -964,9 +952,9 @@ Completed 2
 ## KVO
 
 KVOはObjective-Cの機構です。それは型安全性を念頭に置いて作られていないことを意味します。
-このプロジェクトは問題の一部を解決しようとします。
+このプロジェクトは問題の一部を解決しようとしています。
 
-このライブラリでは2つのビルドインの方法でKVOをサポートしています。
+このライブラリにはKVOをサポートする2つの方法がビルドインされています。
 
 ```swift
 // KVO
@@ -982,9 +970,9 @@ extension NSObject {
 #endif
 ```
 
-どのように`UIView`のframeを監視するかの例です。
+`UIView`のframeを監視する方法の例を示します。
 
-**WARNING: UIKitはKVOに準拠していませんがこれは動きます。**
+**WARNING: UIKitはKVOに準拠していませんが、以下は動きます。**
 
 ```swift
 view
@@ -1006,12 +994,11 @@ view
 
 ### `rx_observe`
 
-`rx_observe`はより効率が良いです、なぜならこれはKVO機構のただのシンプルなラッパーだからです。
-しかし使用するシナリオによっては制限があります。
+`rx_observe`は、KVO機構のただのシンプルなラッパーなので、パフォーマンスには優れますが、使用シナリオは大きく制限されます。
 
-* it can be used to observe paths starting from `self` or from ancestors in ownership graph (`retainSelf = false`)
-* it can be used to observe paths starting from descendants in ownership graph (`retainSelf = true`)
-* the paths have to consist only of `strong` properties, otherwise you are risking crashing the system by not unregistering KVO observer before dealloc.
+* `self` または所有者グラフの祖先から始まるpathの監視に使用できる (`retainSelf = false`)
+* 所有者グラフの子孫から始まるpathの監視に使用できる (`retainSelf = true`)
+* pathは`強い`プロパティのみで構成されていなければならない。さもないと、解放前にKVOオブザーバの登録解除を忘れるとシステムをクラッシュする可能性がある。
 
 例.
 
@@ -1021,12 +1008,12 @@ self.rx_observe(CGRect.self, "view.frame", retainSelf: false)
 
 ### `rx_observeWeakly`
 
-`rx_observeWeakly`は`rx_observe`よりやや遅い、なぜなら弱参照の場合にオブジェクトの解放をハンドルする必要があるからです。
+`rx_observeWeakly`は、弱参照の場合にオブジェクトの解放をハンドルする必要があるので `rx_observe`よりやや遅い。
 
-これは`rx_observe`を使用できる全ての場合で使用することができ、さらに
+`rx_observeWeakly`は`rx_observe`を使用できる全ての場合で使用することができ、さらに
 
-* because it won't retain observed target, it can be used to observe arbitrary object graph whose ownership relation is unknown
-* it can be used to observe `weak` properties
+* 監視対象を保持しないので、所有関係が不明な任意のオブジェクトグラフの監視に使用できる
+* `弱い`プロパティの監視に使用できる
 
 例.
 
@@ -1034,45 +1021,44 @@ self.rx_observe(CGRect.self, "view.frame", retainSelf: false)
 someSuspiciousViewController.rx_observeWeakly(Bool.self, "behavingOk")
 ```
 
-### 構造体を監視する
+### 構造体の監視
 
-KVOはObjective-Cの機構で、それは`NSValue`に大きく依存しています。
+KVOはObjective-Cの機構であり、`NSValue`に大きく依存しています。
 
 **RxCocoaには`CGRect`, `CGSize` それに `CGPoint` 構造体のKVOサポートが組み込まれています。**
 
-いくつかの他の構造体を監視する場合には、手動で`NSValue`から構造体を抽出する必要があります。
+その他の構造体を監視するには、手動で`NSValue`から構造体を抽出する必要があります。
 
-[ここ](../RxCocoa/Common/KVORepresentable+CoreGraphics.swift)にどのようにKVO機構を拡張するか、またどのように`KVORepresentable` プロトコルを実装することによって`rx_observe*`メソッドを他の構造体に使うかの例があります。
+[ここ](../RxCocoa/Common/KVORepresentable+CoreGraphics.swift)には、`KVORepresentable` プロトコルの実装によりその他の構造体向けにKVO監視機構を拡張して`rx_observe*`メソッドを作成する例があります。
 
 ## UIレイヤーのコツ
 
-UIKitコントロールにバインドする時に、あなたの`Observable`がUIレイヤーで満たす必要がある一定の物事があります。
+UIKitコントロールにバインドする際にあなたの`Observable`がUIレイヤーで満たす必要がある幾つかの物事があります。
 
 ### スレッディング
 
-`Observable`は`MainScheduler`(UIThread)で値を送信する必要があります。それはまさに通常のUIKit/Cocoaが要求していることです。
+`Observable`は`MainScheduler`(UIThread)で値を送信する必要があります。これは単なる通常のUIKit/Cocoaの要件です。
 
-あなたのAPIが`MainScheduler`で結果を返すのは通常良いアイデアです。
-あなたがバックグラウンドスレッドで何かをUIにバインドしようとした場合、**デバッグ**ビルドのRxCocoaは通常そのことを通知する例外を投げます。
+通常あなたのAPIが`MainScheduler`で結果を返すのは良いアイデアです。
+何かをバックグラウンドスレッドからUIにバインドしようとすると、**デバッグ**ビルドされたRxCocoaは通常例外を投げてそのことを通知します。
 
-修正するには`observeOn(MainScheduler.instance)`を追加する必要があります。
+これを修正するには`observeOn(MainScheduler.instance)`を追加する必要があります。
 
-**デフォルトではNSURLSessionの拡張は結果を`MainScheduler`で返しません。**
+**デフォルトではNSURLSession拡張は結果を`MainScheduler`で返しません。**
 
 ### エラー
 
-あなたはUIKitコントロールに失敗をバインドできません、なぜならそれは未定義の動作だからです。
+UIKitコントロールに失敗をバインドすることはできません。なぜならそれは未定義の動作だからです。
 
-`Observable`が失敗する可能性があるかわからない場合、`catchErrorJustReturn(valueThatIsReturnedWhenErrorHappens)`を使用して失敗しないことを保証することができますが、**配下のシーケンスでエラーが発生した後でも完了(complete)します。**
+`Observable`が失敗する可能性があるかわからない場合は、`catchErrorJustReturn(valueThatIsReturnedWhenErrorHappens)`を使用して失敗しないことを保証することができます。**ただし、エラーが発生すると、配下のシーケンスは依然として終了(complete)します。**
 
-配下のシーケンスでの望ましい動作が要素の生成を続けることなら、いくつかの`retry`オペレーターのバージョンが必要です。
+配下のシーケンスでの望ましい動作が要素の生成を続けることなら、何らかのバージョンの`retry`オペレーターが必要です。
 
-### サブスクリプションを共有する
+### サブスクリプションの共有
 
-通常はUIレイヤーでサブスクリプションを共有したいです。
-複数のUI要素に同一のデータをバインドするのに、別のHTTP呼び出しは行いたくありません。
+UIレイヤーでは通常サブスクリプションの共有を望みます。複数のUI要素に同一のデータをバインドするために個別にHTTPを呼び出したくはありません。
 
-このようにしたとしましょう:
+次のようなコードがあるとします:
 
 ```swift
 let searchResults = searchText
@@ -1081,63 +1067,61 @@ let searchResults = searchText
     .flatMapLatest { query in
         API.getSearchResults(query)
             .retry(3)
-            .startWith([]) // clears results on new search term
+            .startWith([]) // 新規検索用に結果をクリアする
             .catchErrorJustReturn([])
     }
-    .shareReplay(1)              // <- `shareReplay`オペレーターに注意
+    .shareReplay(1)              // <- `shareReplay`オペレーターに注目
 ```
 
-通常一回で計算された検索結果を共有したいでしょう。これが`shareReplay`が意図することです。
+通常望むことは、一旦計算された検索結果を共有することです。これが`shareReplay`が行うことです。
 
-**通常UIレイヤーの変換チェーンの最後に`shareReplay`を追加するのは大雑把ですが良いやりかたです、  
-  なぜならあなたは本当に計算結果を共有したいからです。  
-  `searchResults`を複数のUI要素にバインドするたびに個別のHTTPコネクションを発行したくはないでしょう。**
+**通常、UIレイヤーの変換チェーンの最後に`shareReplay`を追加するのは確かな経験則です。
+  実際に計算結果の共有を望むからです。複数のUI要素に`searchResults`をバインドするたびに個別にHTTPコネクションを発行したくはありません。**
 
-**また、`Driver` ユニットを見てみましょう。それは`shareReplay`呼び出しを透過的にラップするよう設計されており、  
-  要素はメインUIスレッドで監視されエラー無しでUIにバインドできます。**
+**`Driver` ユニットもちょっと見ておきましょう。これは`shareReplay`コールを透過的にラップし、要素がメインUIスレッドで監視されることとUIにエラーがバインドされないことを保証するように設計されています。**
 
-## HTTPリクエストを作る
+## HTTPリクエストの作成
 
-HTTPリクエストを作ることは皆が最初に試してみるモノの一つです。
+HTTPリクエストの作成は皆が最初に試みるものです。
 
-最初に必要なのは必要な作業を行う`NSURLRequest`オブジェクトを構築することです。
+まず実行すべき作業を表現する`NSURLRequest`オブジェクトを構築が必要です。
 
-決めることを求められるのは、それはGETリクエストまたはPOSTリクエストか、リクエスト本体、クエリパラメーターなど...
+リクエストは、それがGETリクエストなのか、POSTリクエストなのか、リクエスト本体やクエリパラメーターは何かなどを決めます。
 
-これはシンプルなGETリクエストを作る方法です
+以下はシンプルなGETリクエストを作成する方法です
 
 ```swift
 let request = NSURLRequest(URL: NSURL(string: "http://en.wikipedia.org/w/api.php?action=parse&page=Pizza&format=json")!)
 ```
 
-もし別のobservableとの組み合わせの外でリクエストを実行したいなら、これを行う必要があります。
+他のobservableとは独立に単にリクエストを実行したいなら、実行すべきものは以下です。
 
 ```swift
 let responseJSON = NSURLSession.sharedSession().rx_JSON(request)
 
-// no requests will be performed up to this point
-// `responseJSON` is just a description how to fetch the response
+// この時点ではリクエストは実行されていない
+// `responseJSON` は単なるレスポンスをフェッチする方法の記述に過ぎない
 
 let cancelRequest = responseJSON
-    // this will fire the request
+    // これがリクエストを発行する
     .subscribeNext { json in
         print(json)
     }
 
 NSThread.sleepForTimeInterval(3)
 
-// if you want to cancel request after 3 seconds have passed just call
+// 3秒経過後にリクエストをキャンセルしたい場合は、単に以下をコール
 cancelRequest.dispose()
 
 ```
 
-**デフォルトではNSURLSessionの拡張は結果を`MainScheduler`で返しません。**
+**NSURLSession拡張はデフォルトでは結果を`MainScheduler`で返しません。**
 
-この場合、レスポンスへのもっと低レベルなアクセスが欲しいでしょう、使用できます:
+レスポンスへのもっと低レベルなアクセスを望む場合は、次のコードを使用できます:
 
 ```swift
 NSURLSession.sharedSession().rx_response(myNSURLRequest)
-    .debug("my request") // this will print out information to console
+    .debug("my request") // コンソールに情報を出力します
     .flatMap { (data: NSData!, response: NSURLResponse!) -> Observable<String> in
         if let response = response as? NSHTTPURLResponse {
             if 200 ..< 300 ~= response.statusCode {
@@ -1157,13 +1141,13 @@ NSURLSession.sharedSession().rx_response(myNSURLRequest)
     }
 ```
 
-### HTTPトラフィックをロギングする
+### HTTPトラフィックのロギング
 
-デフォルトではデバッグモードのRxCocoaは全てのHTTPリクエストのログをコンソールに出力します。
-この場合あなたはその動作を変えたいでしょう、`Logging.URLRequests`フィルターを設定してください。
+デバッグモードのRxCocoaでは、デフォルトで全てのHTTPリクエストのログをコンソールに出力します。
+この振る舞いを変えたい場合は`Logging.URLRequests`フィルターを設定してください。
 
 ```swift
-// read your own configuration
+// 独自の設定を読む
 public struct Logging {
     public typealias LogURLRequest = (NSURLRequest) -> Bool
 
@@ -1179,8 +1163,8 @@ public struct Logging {
 
 ## RxDataSources
 
-これは`UITableView`と`UICollectionView`に完全に機能するリアクティブデータソースを実装したクラスのセットです。
+RxDataSourcesは`UITableView`と`UICollectionView`用の完全に機能するリアクティブデータソースを実装した一連のクラスです。
 
 RxDataSourcesは[ここ](https://github.com/RxSwiftCommunity/RxDataSources)にバンドルされています。
 
-それらをどうやって使うかの完全に機能するデモは[RxExample](../RxExample)プロジェクトに含まれています。
+これらの使い方に関する完全に機能するデモは[RxExample](../RxExample)プロジェクトに含まれています。
