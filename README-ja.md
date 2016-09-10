@@ -4,19 +4,19 @@
 [![Travis CI](https://travis-ci.org/ReactiveX/RxSwift.svg?branch=master)](https://travis-ci.org/ReactiveX/RxSwift) ![platforms](https://img.shields.io/badge/platforms-iOS%20%7C%20OSX%20%7C%20tvOS%20%7C%20watchOS%20%7C%20Linux%28experimental%29-333333.svg) ![pod](https://img.shields.io/cocoapods/v/RxSwift.svg) [![Carthage compatible](https://img.shields.io/badge/Carthage-compatible-4BC51D.svg?style=flat)](https://github.com/Carthage/Carthage)
 
 
-Xcode 7 Swift 2.1 required
+Xcode 7.3 Swift 2.2 required
 
 ## Rxについて
 
-Rxは[計算の一般的な抽象化](https://youtu.be/looJcaeboBY)を`Observable<Element>`インターフェースで表現します。
+Rxは`Observable<Element>`インターフェースで表現した[計算の一般的な抽象化](https://youtu.be/looJcaeboBY)です。
 
-これは[Rx](https://github.com/Reactive-Extensions/Rx.NET)のSwiftバージョンです。
+RxSwiftは[Rx](https://github.com/Reactive-Extensions/Rx.NET)のSwiftバージョンです。
 
-可能な限りオリジナルから多くの概念を取り入れようとしますが、いくつかの概念はより快適なパフォーマンスのためにiOS/OSX環境に適合させました。
+可能な限りオリジナルから多くの概念を取り入れていますが、より快適なパフォーマンスのためにiOS/OSX環境に適合させた概念もあります。
 
 クロスプラットフォームのドキュメントは[ReactiveX.io](http://reactivex.io/)で見つけることができます。
 
-オリジナルのRxと同様に、非同期操作とイベント/データストリームを簡単に構成することを意図しています。
+オリジナルのRxと同様に、非同期操作とイベント/データストリームの構成を容易にすることを意図しています。
 
 KVO、非同期操作そしてストリームは抽象化されたシーケンスの下に一元化されます。
 これがRxがとてもシンプルでエレガント、そしてパワフルである理由です。
@@ -32,12 +32,12 @@ KVO、非同期操作そしてストリームは抽象化されたシーケン�
 * [コツと共通エラー](Documentation_ja/Tips.md)
 * [デバッキング](Documentation_ja/GettingStarted.md#debugging)
 * [Rxの裏にある数学](Documentation_ja/MathBehindRx.md)
-* [hotとcold observable sequenceとは何か](Documentation_ja/HotAndColdObservables.md)
+* [hotとcoldなobservable sequenceとは何か](Documentation_ja/HotAndColdObservables.md)
 * [どのような公開APIがあるのか](Documentation_ja/API.md)
 
 ###### ... インストールしたいから
 
-* RxSwift/RxCocoa をアプリに統合したい. [インストールガイド](Documentation_ja/Installation.md)
+* RxSwift/RxCocoa をアプリに統合する. [インストールガイド](Documentation_ja/Installation.md)
 
 ###### ... ハックしたいから
 
@@ -46,7 +46,7 @@ KVO、非同期操作そしてストリームは抽象化されたシーケン�
 
 ###### ... 交流したいから
 
-* RxSwiftと経験を用いて仲間と交流すると良いでしょう、最高ですよ。<br />[![Slack channel](http://slack.rxswift.org/badge.svg)](http://slack.rxswift.org) [Join Slack Channel](http://slack.rxswift.org/)
+* これだけでも十分ですが、RxSwiftを使っている仲間と交流し経験を分かち合うと良いでしょう。<br />[![Slack channel](http://slack.rxswift.org/badge.svg)](http://slack.rxswift.org) [Join Slack Channel](http://slack.rxswift.org/)
 * ライブラリを使用して見つけたバグを報告してください。 [バグ報告テンプレートを使ってIssueを作る](Documentation/IssueTemplate.md)
 * 新しい機能をリクエストしてください。 [機能リクエストテンプレートを使ってIssueを作る](Documentation/NewFeatureRequestTemplate.md)
 
@@ -64,8 +64,113 @@ KVO、非同期操作そしてストリームは抽象化されたシーケン�
 ###### ... より広範なビジョンを見たいから
 
 * Android向けはありますか? => [RxJava](https://github.com/ReactiveX/RxJava)
-* Where is all of this going, what is the future, what about reactive architectures, how do you design entire apps this way? [Cycle.js](https://github.com/cyclejs/cycle-core) - this is javascript, but [RxJS](https://github.com/Reactive-Extensions/RxJS) is javascript version of Rx.
-* 全てはどこに向かっていますか？未来は？Reactiveアーキテクチャは？どのようにこの方法でアプリ全体をデザインしますか？ => [Cycle.js](https://github.com/cyclejs/cycle-core) - これはJavascriptですが[RxJS](https://github.com/Reactive-Extensions/RxJS)はRxのJavascriptバージョンです。
+* 全てはどこに向かっていますか？未来は？Reactiveアーキテクチャとは？どのようにこの方法でアプリ全体をデザインしますか？ => [Cycle.js](https://github.com/cyclejs/cycle-core) - これはJavascriptですが[RxJS](https://github.com/Reactive-Extensions/RxJS)はRxのJavascriptバージョンです。
+
+## 利用法
+
+<table>
+  <tr>
+    <th width="30%">これは例です</th>
+    <th width="30%">実行例</th>
+  </tr>
+  <tr>
+    <td>GitHubリポジトリの検索を定義する ...</td>
+    <th rowspan="9"><img src="https://raw.githubusercontent.com/kzaher/rxswiftcontent/master/GithubSearch.gif"></th>
+  </tr>
+  <tr>
+    <td><div class="highlight highlight-source-swift"><pre>
+let searchResults = searchBar.rx_text
+    .throttle(0.3, scheduler: MainScheduler.instance)
+    .distinctUntilChanged()
+    .flatMapLatest { query -> Observable<[Repository]> in
+        if query.isEmpty {
+            return Observable.just([])
+        }
+
+        return searchGitHub(query)
+            .catchErrorJustReturn([])
+    }
+    .observeOn(MainScheduler.instance)</pre></div></td>
+  </tr>
+  <tr>
+    <td>... 次に、その結果をtableviewに結びつける</td>
+  </tr>
+  <tr>
+    <td width="30%"><div class="highlight highlight-source-swift"><pre>
+searchResults
+    .bindTo(tableView.rx_itemsWithCellIdentifier("Cell")) {
+        (index, repository: Repository, cell) in
+        cell.textLabel?.text = repository.name
+        cell.detailTextLabel?.text = repository.url
+    }
+    .addDisposableTo(disposeBag)</pre></div></td>
+  </tr>
+</table>
+
+
+## インストール
+
+Rxは外部依存性がありません。
+
+以下の選択肢があります。
+
+### 手で
+
+Rx.xcworkspace を開き, `RxExample` を選択し、run をクリック。これによりすべてがビルドされ、サンプルアプリが実行されます。
+
+### [CocoaPods](https://guides.cocoapods.org/using/using-cocoapods.html)
+
+**:warning: 重要! tvOSをサポートするには CocoaPods `0.39` が必要です。 :warning:**
+
+```
+# Podfile
+use_frameworks!
+
+target 'YOUR_TARGET_NAME' do
+    pod 'RxSwift',    '~> 2.0'
+    pod 'RxCocoa',    '~> 2.0'
+end
+
+# RxTestsとRxBlocking はユニットテスト/統合テストにおいて必要となります。
+target 'YOUR_TESTING_TARGET' do
+    pod 'RxBlocking', '~> 2.0'
+    pod 'RxTests',    '~> 2.0'
+end
+```
+
+Replace `YOUR_TARGET_NAME` を実際のターゲット名に置き換えて、`Podfile` のあるディレクトリで次を実行してください:
+
+```
+$ pod install
+```
+
+### [Carthage](https://github.com/Carthage/Carthage)
+
+**Xcode 7.1 が必要**
+
+次の内容の `Cartfile` を追加して、
+
+```
+github "ReactiveX/RxSwift" ~> 2.0
+```
+
+次を実行する:
+
+```
+$ carthage update
+```
+
+### git submodules を使用して手作業で
+
+* RxSwift をサブモジュールとして追加する。
+
+```
+$ git submodule add git@github.com:ReactiveX/RxSwift.git
+```
+
+* Drag `Rx.xcodeproj` をプロジェクトナビゲーターにドラック
+* Go to `Project > Targets > Build Phases > Link Binary With Libraries` を開き、`+` をクリックし、`RxSwift-[Platform]` および `RxCocoa-[Platform]` ターゲットを選択する。
+
 
 ##### リファレンス
 
