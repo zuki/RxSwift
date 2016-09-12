@@ -1,16 +1,15 @@
 API
 ===
 
-## RxSwiftがサポートしているオペレーター
+## RxSwiftがサポートするオペレーター
 
-いくつかのケースで、同じオペレーターの複数のエイリアスがあります。  
-なぜならプラットフォーム/実装が違うと同じオペレーターでも時々呼び出すのが難しいからです。  
-時には歴史的な理由だったり、言語によって予約されたキーワードだったりします。
+いくつかのケースでは同一のオペレーターに複数のエイリアスがあります。なぜならプラットフォームや実装が異なると同じオペレーターに異なる名前付けがされている場合があるからです。これは歴史的な利用であったり、言語によって予約されたキーワードだったりするからです。
 
-強力なコミュニティの合意が欠けているときに、RxSwiftは通常複数のエイリアスが含まれます。  
+コミュニティに強力な合意がない場合は、通常、RxSwiftは複数のエイリアスを設けています。
+
 オペレーターはデフォルトではステートレスです。
 
-#### Creating Observables
+#### Observableを作成するオペレータ
 
  * [`asObservable`](http://reactivex.io/documentation/operators/from.html)
  * [`create`](http://reactivex.io/documentation/operators/create.html)
@@ -26,7 +25,7 @@ API
  * [`repeatElement`](http://reactivex.io/documentation/operators/repeat.html)
  * [`timer`](http://reactivex.io/documentation/operators/timer.html)
 
-#### Transforming Observables
+#### Observableを変換するオペレータ
   * [`buffer`](http://reactivex.io/documentation/operators/buffer.html)
   * [`flatMap`](http://reactivex.io/documentation/operators/flatmap.html)
   * [`flatMapFirst`](http://reactivex.io/documentation/operators/flatmap.html)
@@ -35,7 +34,7 @@ API
   * [`scan`](http://reactivex.io/documentation/operators/scan.html)
   * [`window`](http://reactivex.io/documentation/operators/window.html)
 
-#### Filtering Observables
+#### Observableをフィルタリングするオペレータ
   * [`debounce` / `throttle`](http://reactivex.io/documentation/operators/debounce.html)
   * [`distinctUntilChanged`](http://reactivex.io/documentation/operators/distinct.html)
   * [`elementAt`](http://reactivex.io/documentation/operators/elementat.html)
@@ -46,7 +45,7 @@ API
   * [`takeLast`](http://reactivex.io/documentation/operators/takelast.html)
   * [`single`](http://reactivex.io/documentation/operators/first.html)
 
-#### Combining Observables
+#### Observableを結合させるオペレータ
 
   * [`merge`](http://reactivex.io/documentation/operators/merge.html)
   * [`startWith`](http://reactivex.io/documentation/operators/startwith.html)
@@ -54,13 +53,13 @@ API
   * [`combineLatest`](http://reactivex.io/documentation/operators/combinelatest.html)
   * [`zip`](http://reactivex.io/documentation/operators/zip.html)
 
-#### Error Handling Operators
+#### エラー処理を行うオペレータ
 
  * [`catch`](http://reactivex.io/documentation/operators/catch.html)
  * [`retry`](http://reactivex.io/documentation/operators/retry.html)
  * [`retryWhen`](http://reactivex.io/documentation/operators/retry.html)
 
-#### Observable Utility Operators
+#### Observableのユーティリティオペレータ
 
   * [`delaySubscription`](http://reactivex.io/documentation/operators/delay.html)
   * [`do` / `doOnNext`](http://reactivex.io/documentation/operators/do.html)
@@ -71,20 +70,20 @@ API
   * [`using`](http://reactivex.io/documentation/operators/using.html)
   * debug
 
-#### Conditional and Boolean Operators
+#### 条件付き/論理オペレータ
   * [`amb`](http://reactivex.io/documentation/operators/amb.html)
   * [`skipWhile`](http://reactivex.io/documentation/operators/skipwhile.html)
   * [`skipUntil`](http://reactivex.io/documentation/operators/skipuntil.html)
   * [`takeUntil`](http://reactivex.io/documentation/operators/takeuntil.html)
   * [`takeWhile`](http://reactivex.io/documentation/operators/takewhile.html)
 
-#### Mathematical and Aggregate Operators
+#### 数学的/集計オペレータ
 
   * [`concat`](http://reactivex.io/documentation/operators/concat.html)
   * [`reduce` / `aggregate`](http://reactivex.io/documentation/operators/reduce.html)
   * [`toArray`](http://reactivex.io/documentation/operators/to.html)
 
-#### Connectable Observable Operators
+#### 接続可能なObservableオペレータ
 
   * [`multicast`](http://reactivex.io/documentation/operators/publish.html)
   * [`publish`](http://reactivex.io/documentation/operators/publish.html)
@@ -94,7 +93,7 @@ API
 
 新しいオペレーターを作成することも非常に簡単です。
 
-## RxCocoa extensions
+## RxCocoaのエクステンション
 
 **iOS / OSX**
 
