@@ -1,12 +1,12 @@
 
 ## RxExamples
 
-実例アプリを実行する:
+実例アプリを実行する手順:
 
 * `Rx.xcworkspace` を開く
-* いずれかの実例のスキーム(RxExample-iOS, RxExample-OSX)を選択して `Run` を叩く
+* 実例のスキーム(RxExample-iOS, RxExample-OSX)のいずれかを選択して `Run` をクリック
 
-CocoaPodsを使って実例アプリを実行できます。
+次のように、CocoaPodsを使っても実例アプリを実行できます。
 
 ```
 pod try RxSwift
