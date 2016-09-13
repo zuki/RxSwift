@@ -1,11 +1,10 @@
 Tips
 ====
 
-* 常にあなたのシステムまたはそれらのパーツを純粋関数としてモデル化する努力をしてください。  
-  それらの純粋関数はテストが簡単でオペレーターの振る舞いを変更して使用することができます。
-* Rxを使うとき、最初はビルトインのオペレーターで組み立てようとしてください。
-* しばしばいくつかのオペレーターを組み合わせて使っている場合、  
-  あなたの便利なオペレーター(convenience operators)を作ってください。
+* システムやそのパーツは常に純粋関数としてモデル化する努力をしてください。
+  純粋関数はテストが簡単でオペレーターの振る舞いの変更にも使用することができます。
+* Rxを使う場合は、まずビルトインのオペレーターで構成するようにしてください。
+* ある種の組み合わせのオペレータを頻繁に使用する場合は、独自のコンビニエンスオペレータを作成してください。
 
 例.
 
@@ -22,11 +21,11 @@ extension ObservableType where E: MaybeCool {
 }
 ```
 
-  * Rxオペレーターはできるだけ一般的なものです、しかし常にモデル化が難しいエッジケースはあります。これらの場合はおそらくいずれかのビルトインオペレーターを参照してあなたのオペレーターを作ることができます。
+  * Rxオペレーターはできるだけ一般的なものですが、モデル化が難しいエッジケースは常にあります。そのような場合は、おそらくビルトインオペレーターのいずれかを参考にして、独自のオペレータを作成することができます。
 
-  * 常にsubscriptionを構成するオペレーターを使用してください。
+  * 常にオペレーターを使用してsubscriptionを構成してください。
 
-  **なんとしてもネストしたsubscribe呼び出しは避けてください。これは悪い臭いがします。**
+  **なんとしてもネストしたsubscribe呼び出しは避けてください。次のコードは悪い臭いがします。**
 
   ```swift
   textField.rx_text.subscribeNext { text in
@@ -43,11 +42,11 @@ extension ObservableType where E: MaybeCool {
   ```swift
   textField.rx_text
       .flatMapLatest { text in
-          // Assuming this doesn't fail and returns result on main scheduler,
-          // otherwise `catchError` and `observeOn(MainScheduler.instance)` can be used to
-          // correct this.
+          // 個々では失敗がなく、メインスケジューラ上で結果を返すことを仮定しています。
+          // そうでない場合は、`catchError` と `observeOn(MainScheduler.instance)`
+          // を使って修正することができます。
           return performURLRequest(text)
       }
       ...
-      .addDisposableTo(disposeBag) // only one top most disposable
+      .addDisposableTo(disposeBag) // 最上位の1つのdisposableのみ
   ```
