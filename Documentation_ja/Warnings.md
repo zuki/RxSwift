@@ -1,11 +1,11 @@
 Warnings
 ========
 
-### <a name="unused-disposable"></a>未使用のdisposable (unused-disposable)
+### 未使用のdisposable (unused-disposable)
 
-`Disposable` を返す `subscribe*`, `bind*` それと `drive*` 関数ファミリーは次のことが有効です。
+以下は、`Disposable` を返す `subscribe*`、`bind*`、`drive*` 関数ファミリーで有効です。
 
-警告はおそらくこれと同じ文脈で表示されます:
+次のようなことを行うと警告を受けます。
 
 ```Swift
 let xs: Observable<E> ....
@@ -18,13 +18,12 @@ xs
     ...
   }, onError: {
     ...
-  })  
+  })
 ```
 
-`subscribe`関数はサブスクリプションした`Disposable`を返し、それは計算のキャンセルとリソース解放に使用できます。
+`subscribe`関数は、計算のキャンセルとリソース解放に使用できる、サブスクリプションの`Disposable`を返します。
 
-よどみなく呼び出しを終了させる望ましい方法は`DisposeBag`を使用することです。
-いずれかのコールチェインを使って`.addDisposableTo(disposeBag)`を呼び出すか、bagに直接disposableを追加します。
+これら連続する呼び出しを終了させる望ましい方法は`DisposeBag`の使用です。コールチェインで `.addDisposableTo(disposeBag)`を呼び出すか、bagに直接disposableを追加する、のいずれかの方法で行います。
 
 ```Swift
 let xs: Observable<E> ....
@@ -42,17 +41,11 @@ xs
   .addDisposableTo(disposeBag) // <--- `addDisposableTo` に注目
 ```
 
-`disposeBag`の割り当てが解除されるとき、それに含まれているdisposableが自動的にdisposeされます。
+`disposeBag`の割り当てが解除されるとき、それに含まれているdisposableも自動的に破棄されます。
 
-`xs`が`Completed`または`Error`どちらかの予測可能な方法で終了する場合、  
-ハンドリングしていないサブスクリプションした`Disposable`はすべてのリソースをリークしません。  
-しかしながら、このような場合であっても、  
-依然としてdispose bagを使うことはサブスクリプションしたdisposableをハンドルする望ましい方法です。  
-要素計算が常に予測可能な時点で終了することを保証し、堅牢で将来性のあるコードを作ります。  
-なぜならたとえリソースが適切にdisposeされていても`xs`の実装は変わるかもしれないからです。
+`xs`が、`Completed` か `Error` のどちらかの予測可能な方法で終了する場合、サブスクリプションの `Disposable` を処理しなくてもリソースのリークはありません。しかし、このような場合であっても、dispose bagの使用はサブスクリプションのdisposableを処理する望ましい方法です。なぜなら、それは要素計算が予測可能な時点で常に終了することを保証し、さらに、たとえ`xs`の実装の実装が変わってもリソースが適切に廃棄されるのでコードを堅牢で将来性のあるものにするからです。
 
-サブスクリプションとリソースを確認する他の方法は  
-いくつかのオブジェクトの存続期間と結びついている`takeUntil`オペレーターを使用することです。
+サブスクリプションとリソースをオブジェクトのライフタイムに結びつけるもう一つの方法は、`takeUntil`オペレーターの使用です。
 
 ```Swift
 let xs: Observable<E> ....
@@ -70,7 +63,7 @@ _ = xs
   })
 ```
 
-サブスクリプションした`Disposable`を無視しているのは予期した振る舞いです、これはコンパイラの警告を黙らせる方法です。
+サブスクリプションの`Disposable`を無視するのが想定した振る舞いの場合、以下の方法でコンパイラの警告を無くせます。
 
 ```Swift
 let xs: Observable<E> ....
@@ -86,9 +79,9 @@ _ = xs // <-- アンダースコアに注目
   })
 ```
 
-### <a name="unused-observable"></a>未使用のobservableシーケンス(unused-observable)
+### 未使用のobservableシーケンス(unused-observable)
 
-警告はおそらくこれと同じ文脈で表示されます:
+次のようなことを行うと警告を受けます。
 
 ```Swift
 let xs: Observable<E> ....
@@ -98,16 +91,16 @@ xs
   .map { ... }
 ```
 
-このコードは`xs`シーケンスからフィルターしてマップするobservableシーケンスを定義していますが、その結果は無視します。
+このコードは`xs`シーケンスからフィルターしてマップするobservableシーケンスを定義していますが、その結果を無視しています。
 
-このコードはobservableシーケンスを定義してそれを無視しているだけですが、実際には何もしません。
+このコードはobservableシーケンスを定義し、その後それを無視しているので、実際には何もしません。
 
-あなたの意図はおそらくobservableシーケンスの定義を保存するか、後でそれを使用することです...
+意図するものは、おそらくobservableシーケンスの定義を保存するか、後でそれを使用することだったはずです。
 
 ```Swift
 let xs: Observable<E> ....
 
-let ys = xs // <--- 名前を `ys` と定義する
+let ys = xs // <--- 定義を `ys` と名付ける
   .filter { ... }
   .map { ... }
 ```
