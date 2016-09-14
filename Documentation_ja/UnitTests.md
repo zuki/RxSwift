@@ -1,26 +1,25 @@
 ユニットテスト
 ==========
 
-## カスタムオペレーターをテストする
+## カスタムオペレーターのテスト
 
-ライブラリーは全てのRxSwiftオペレーターのテストで`RxTests`を使います、  
-したがって`Rx.xcworkspace`プロジェクト内のAllTests-*ターゲットを見てみることができます。
+RxSwiftは、x.xcworkspace`プロジェクト`のAllTests-*ターゲットにあるすべてのオペレーターのテストに `RxTests` を使っています。
 
-これは典型的な`RxSwift`オペレータのユニットテストの実例です:
+以下は、`RxSwift` オペレータの典型的なユニットテストの例です:
 
 ```swift
 func testMap_Range() {
         // テストスケジューラを初期化
-        // テストスケジューラはローカルマシンのクロックから切り離された仮想時間を実装している
-        // それは可能な限り高速にシミュレーションを実行し、
-        // 全てのイベントがハンドルされていることを証明できます。
+        // テストスケジューラは、ローカルマシンのクロックから切り離された仮想時間を実装している
+        // これは可能な限り高速にシミュレーションを実行し、
+        // すべてのイベントが処理されていることを証明することを可能にします。
         let scheduler = TestScheduler(initialClock: 0)
 
-        // モックhot observableシーケンスを作る。
-        // シーケンスは以下の時間にイベントを発行し
-        // いくつかのobserverがsubscribeしていても構いません。
-        // (これがhotの意味です)
-        // このobservableシーケンスは生存期間中に行われた全てのsubscriptionを記録します。
+        // hot observableシーケンスのモックを作る。
+        // シーケンスはsubscribeしているobserverがあるとないとにかかわらず
+        // 指定した時間にイベントを発行する。いくつかのがいても構いません。
+        // (これがhotが意味するものです)
+        // このobservableシーケンスは、その生存期間中に行われたすべてのsubscriptionを記録します。
         // (`subscriptions`プロパティ)
         let xs = scheduler.createHotObservable([
             next(150, 1),  // 1番目の引数は仮想時間、2番目の引数は要素の値
@@ -28,13 +27,13 @@ func testMap_Range() {
             next(220, 1),
             next(230, 2),
             next(240, 4),
-            completed(300) // 送信が完了までの仮想時間
+            completed(300) // 完了が送信される仮想時間
             ])
 
-        // `start`メソッドはデフォルトでは:
-        // * シミュレーションを実行し、`res`によって参照したobserverを使用して全てのイベントを記録します。
-        // * 仮想時間200でsubscribe
-        // * 仮想時間1000でsubscriptionをdispose
+        // `start`メソッドはデフォルトで以下を行う
+        // * シミュレーションを実行し、`res`によって参照されるobserverを使用してすべてのイベントを記録
+        // * 仮想時間200にsubscribe
+        // * 仮想時間1000にsubscriptionをdispose
         let res = scheduler.start { xs.map { $0 * 2 } }
 
         let correctMessages = [
@@ -54,19 +53,16 @@ func testMap_Range() {
     }
 ```
 
-## オペレーターの組み合わせをテストする(view models, components)
+## オペレーターの組み合わせのテスト (view models, components)
 
-どのようにオペレーターの組み合わせをテストするかの実例は  
-`Rx.xcworkspace`内の`RxExample-iOSTests`ターゲットに含まれます。
+オペレーターの組み合わせをテストする方法の例は `Rx.xcworkspace`内の`RxExample-iOSTests`ターゲットに含まれます。
 
-あなたが読みやすい方法であなたのテストを書くことができますので、簡単に`RxTests`の拡張を定義します。
+テストを読みやすく書けるように `RxTests` のExtensionを定義するのは容易です。
 
-提供した`RxExample-iOSTests`に含まれている実例は、  
-どのようにそれらの拡張を書くことができるかを示す一部にすぎませんが、  
-それらのテストを書くための多くの可能性があります。
+提供されている `RxExample-iOSTests` に含まれている実例は、そのようなExtensionをどのように書くことができるかを示す一例にすぎませんが、それらのテストを書く方法には多くの可能性があります。
 
 ```swift
-    // イベントを予期する、テストデータ
+    // 予想されるイベントとテストデータ
     let (
         usernameEvents,
         passwordEvents,
@@ -90,8 +86,7 @@ func testMap_Range() {
 
 `RxBlocking`オペレーターを使用して統合テストを書くことも可能です。
 
-`RxBlocking`ライブラリからオペレーターをインポートすると、  
-現在のスレッドのブロックを有効にしてシーケンスの結果を待ちます。
+`RxBlocking`ライブラリからオペレーターをインポートすると、カレントスレッドのブロックを有効にし、シーケンスの結果を待ちます。
 
 ```swift
 let result = try fetchResource(location)
