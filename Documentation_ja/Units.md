@@ -23,7 +23,7 @@ Swiftは強力な型システムを持っており、これを使って、アプ
 
 以下はCocoa/UIKitアプリケーションを書く際に重要なプロパティの一部です。
 
-* エラー出力できない
+* エラー出力しない
 * main scheduler上でobserveする
 * main scheduler上でsubscribeする
 * 副作用を共有する
@@ -45,13 +45,13 @@ observableシーケンスのためのBuilderパターンの一種と考えるこ
 | 物理 units                      | Rx units                                                            |
 |-------------------------------------|---------------------------------------------------------------------|
 | 数 (1つの値)                  | observable シーケンス (複数の値のシーケンス)                            |
-| 次元の単位 (m, s, m/s, N ...) | Swift構造体 (Driver, ControlProperty, ControlEvent, Variable, ...) |
+| 次元の単位 (m, s, m/s, N ...) | Swift構造体 (Driver, ControlProperty, ControlEvent, Variable...) |
 
-物理unitは数と対応する次元の単位の組です。Rx unitはobservableシーケンスと対応するobservableシーケンスプロパティを記述する構造体の組です。
+物理unitは数と対応する次元の単位のペアです。Rx unitはobservableシーケンスと対応するobservableシーケンスプロパティを記述する構造体のペアです。
 
-数は、物理unitで作業する際の基本的な構成的グルーであり、通常、実数または複素数です。Observableシーケンスは、Rx unitsで作業する差異の基本的な構成的グルーです。
+数は、物理unitで作業する際の基本的な構成的グルーであり、通常、実数または複素数です。Observableシーケンスは、Rx unitsで作業する際の基本的な構成的グルーです。
 
-物理Unitと[次元解析](https://en.wikipedia.org/wiki/Dimensional_analysis#Checking_equations_that_involve_dimensions)は複雑な計算におけるある種のエラーを軽減することができます。Rx unitの型チェックはリアクティブプログラムを書く際のある種の論理エラーを軽減することができます。
+物理Unitと[次元解析](https://en.wikipedia.org/wiki/Dimensional_analysis#Checking_equations_that_involve_dimensions)は複雑な計算においてある種のエラーを軽減することができます。Rx unitの型チェックはリアクティブプログラムを書く際にある種の論理エラーを軽減することができます。
 
 数は次の演算子を持ちます: `+`, `-`, `*`, `/`
 Observableシーケンスも演算子を持ちます: `map`, `filter`, `flatMap` ...
@@ -64,10 +64,9 @@ Observableシーケンスも演算子を持ちます: `map`, `filter`, `flatMap`
 
 * まず、Unitを数値に変換し、`/` **演算子** を **適用します**。 `11 / 0.5 = 22`
 * 次に、単位を計算します (m / s)
-* 最後に、結果を組み合わせます = 22 m / s
+* 最後に、両者を合体して結果は = 22 m / s
 
-Rx unitは対応するobservableシーケンスの演算を使用して演算を定義します。
-(これはオペレーターが内部でどのように動作するかです。)
+Rx unitは対応するobservableシーケンスの演算を使用して演算を定義(オペレーターが内部でどのように動作するか)します。
 
 たとえば、`Driver`における`map`演算は、そのobservableシーケンスにおける`map`演算を使用して定義されています。
 
@@ -82,22 +81,22 @@ driver.map { $0 / 0.5 } = ...
 let mapped = driver.asObservable().map { $0 / 0.5 } // この`map`はobservableシーケンスにおいて定義されている
 ```
 
-* 次に、それを組み合わせてUnitを取得します。
+* 次に、それを合体させてUnitを取得します。
 
 ```swift
 let result = Driver(mapped)
 ```
 
-物理学には直交する基本的な単位のセット[(`m`, `kg`, `s`, `A`, `K`, `cd`, `mol`)](https://en.wikipedia.org/wiki/SI_base_unit)があります。
-`RxCocoa`には直交するobservableシーケンスのための基本的な興味深いプロパティのセットがあります。
+物理学には互いに直交する基本的な単位のセット[(`m`, `kg`, `s`, `A`, `K`, `cd`, `mol`)](https://en.wikipedia.org/wiki/SI_base_unit)があります。
+`RxCocoa`には互いに直行するobservableシーケンスの基本的な興味深いプロパティのセットがあります。
 
-    * エラー出力できない
+    * エラー出力しない
     * main scheduler上でobserveする
     * main scheduler上でsubscribeする
     * 副作用を共有する
 
-物理学の派生単位には特別な名前を持つものがあります。<br/>
-例.
+物理学の派生単位には特別な名前を持つものがあります。
+たとえば、
 
 ```
 N (ニュートン: Newton) = kg * m / s / s
@@ -108,19 +107,19 @@ T (テスラ: Tesla) = kg / A / s / s
 Rxの派生unitも特別な名前を持ちます。たとえば、
 
 ```
-Driver = (can't error out) * (observe on main scheduler) * (sharing side effects)
-ControlProperty = (sharing side effects) * (subscribe on main scheduler)
-Variable = (can't error out) * (sharing side effects)
+Driver = (エラー出力しない) * (main scheduler上でobserveする) * (副作用を共有する)
+ControlProperty = (副作用を共有する) * (main scheduler上でsubscribeする)
+Variable = (エラー出力しない) * (副作用を共有する)
 ```
 
 物理学における異なるUnit間の変換は、数において定義されている演算子 `*`, `/` の助けを借りて行われます。
 RXにおける異なるUnit間の変換は、observableシーケンスオペレーターの助けを借りて行われます。たとえば、
 
 ```
-can't error out = catchError
-observe on main scheduler = observeOn(MainScheduler.instance)
-subscribe on main scheduler = subscribeOn(MainScheduler.instance)
-sharing side effects = share* (one of the `share` operators)
+エラー出力しない = catchError
+main scheduler上でobserveする = observeOn(MainScheduler.instance)
+main scheduler上でsubscribeする = subscribeOn(MainScheduler.instance)
+副作用を共有する = share* (`share` オペレータのいずれか)
 ```
 
 
@@ -128,20 +127,20 @@ sharing side effects = share* (one of the `share` operators)
 
 ### Driver unit
 
-* エラー出力できない
+* エラー出力しない
 * main scheduler上でobserveする
 * 副作用を共有する (`shareReplayLatestWhileConnected`)
 
 ### ControlProperty / ControlEvent
 
-* エラー出力できない
+* エラー出力しない
 * main scheduler上でobserveする
 * main scheduler上でsubscribeする
 * 副作用を共有する
 
 ### Variable
 
-* エラー出力できない
+* エラー出力しない
 * 副作用を共有する
 
 ## Driver
@@ -150,12 +149,12 @@ sharing side effects = share* (one of the `share` operators)
 
 ### なぜDriverと命名されたのか
 
-想定したユースケースは、アプリケーションを駆動するシーケンスのモデル化でした。
+想定したユースケースは、アプリケーションを動作させるシーケンスのモデル化でした。
 
 たとえば
 
-* CoreDataモデルからUIを駆動
-* 他のUI要素の値を使用してUIを駆動(バインディング)...
+* CoreDataモデルでUIを動作させる
+* 他のUI要素の値を使用してUIを動作させる(バインディング)...
 
 オペレーティングシステムの通常のドライバのように、シーケンスでエラーが生じた場合、アプリケーションはユーザー入力への応答を停止します。
 
@@ -287,5 +286,4 @@ return Driver(raw: safeSequence)           // 上記をラップする
 
 `drive`は、`Driver` unit上でのみ定義されています。これは、コードの中に`drive`を見つけたら、observableシーケンスは決してエラーを出さず、監視はメインスレッド上で行われており、UI要素へのバインドは安全である、ということを意味します。
 
-しかしながら、理論的には、だれもが`ObservableType`やその他のインターフェース上で動作する`driver`メソッドを定義できます。そのため、更に安全にするためには、UI要素にバインドする前に
-`let results: Driver<[Results]> = ...` により一時的な定義を作成することが完全な証明に必要になるかもしれないことに注意してください。ただし、これが現実的なシナリオであるか否かを決定するのは読者に任せます。
+しかしながら、理論的には、`ObservableType`やその他のインターフェース上で動作する`driver`メソッドを定義することもできます。そのため、より安全にするためには、その完全な証明のために、UI要素にバインドする前に `let results: Driver<[Results]> = ...` により一時的な定義を作成することが必要になることに注意してください。ただし、これが現実的なシナリオであるか否かを決定するのは読者に任せます。
