@@ -56,9 +56,9 @@ let c = Observable.combineLatest(a.asObservable(), b.asObservable()) { $0 + $1 }
 // 1 + 2 = 3 で >= 0 なので、 `c` は最初 "3 is positive" と等しくなる
 
 // Rx変数`c` から値を引き出すために、`c` からの値を subscribe する。
-// `subscribeNext` は variable `c`のnext値（新たな値）を subscribe するという意味。
+// `subscribe(onNext:)` は variable `c`のnext値（新たな値）を subscribe するという意味。
 // これにも初期値 "3 is positive" が含まれている。
-c.subscribeNext { print($0) }          // 表示: "3 is positive"
+c.subscribe(onNext: { print($0) }          // 表示: "3 is positive"
 
 // `a` の値を増やしてみる
 // RxSwiftで a = 4
@@ -80,17 +80,17 @@ b.value = -8                           // 何も表示されない
 
 ## シンプルなUIバインディング
 
-* Variableにバインドする代わりに、Textフィールドの値(rx_text)にバインドしてみましょう
+* Variableにバインドする代わりに、Textフィールドの値(rx.text)にバインドしてみましょう
 * 次に、フィールド値を整数にパースし、非同期APIを使用して数値が素数か否か計算します(map)
 * text フィールド値が非同期呼び出しが完了する前に更新された場合は、新しい非同期呼び出しがエンキューされます(concat)
-* 結果をlabelにバインドします(bindTo(resultLabel.rx_text))
+* 結果をlabelにバインドします(bindTo(resultLabel.rx.text))
 
 ```swift
-let subscription/*: Disposable */ = primeTextField.rx_text    // 型は Observable<String>
+let subscription/*: Disposable */ = primeTextField.rx.text    // 型は Observable<String>
             .map { WolframAlphaIsPrime(Int($0) ?? 0) }        // 型は Observable<Observable<Prime>>
             .concat()                                         // 型は Observable<Prime>
             .map { "number \($0.n) is prime? \($0.isPrime)" } // 型は Observable<String>
-            .bindTo(resultLabel.rx_text)                      // 全てのバインド解除に使用できるDisposable を返す
+            .bindTo(resultLabel.rx.text)                      // 全てのバインド解除に使用できるDisposable を返す
 
 // これはサーバーコールが完了した後に resultLabel.text に "number 43 is prime? true" を設定する
 primeTextField.text = "43"
@@ -117,7 +117,7 @@ subscription.dispose()
 ```swift
 // UIコントロール値を直接バインドし
 // `usernameOutlet`の値を、username値のソースとして使用する
-self.usernameOutlet.rx_text
+self.usernameOutlet.rx.text
     .map { username in
 
         // 同期バリテーション、ここでは特別なことはない
@@ -159,13 +159,13 @@ self.usernameOutlet.rx_text
 // `switchLatest` が行うのはそれである。
     .switchLatest()
 // 今やこれを何とかしてユーザーインターフェースにバインドする必要がある。
-// 古き良き `subscribeNext` はそれをすることができる。
+// 古き良き `subscribe(onNext:)` はそれをすることができる。
 // それは`Observable` チェーンの終わりである。
 // これは全てのバインドを解除して保留中の非同期操作をキャンセルすることができる `Disposable` オブジェクトを生成する。
-    .subscribeNext { valid in
+    .subscribe(onNext: { valid in
         errorLabel.textColor = validationColor(valid)
         errorLabel.text = valid.message
-    }
+    })
 // 一体なぜ手作業で行うのか、それは冗長だ、
 // ビューコントローラーが開放される時に自動的にすべて dispose しよう。
     .addDisposableTo(disposeBag)

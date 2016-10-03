@@ -55,7 +55,7 @@ _ = xs
   .filter { ... }
   .map { ... }
   .switchLatest()
-  .takeUntil(someObject.rx_deallocated) // <-- `takeUntil` オペレーターに注目
+  .takeUntil(someObject.deallocated) // <-- `takeUntil` オペレーターに注目
   .subscribe(onNext: {
     ...
   }, onError: {
@@ -114,9 +114,9 @@ let disposeBag = DisposeBag()
 xs
   .filter { ... }
   .map { ... }
-  .subscribeNext { nextElement in       // <-- `subscribe*` メソッドに注目
+  .subscribe(onNext: { nextElement in       // <-- `subscribe*` メソッドに注目
     // 要素を使う
     print(nextElement)
-  }
+  })
   .addDisposableTo(disposeBag)
 ```

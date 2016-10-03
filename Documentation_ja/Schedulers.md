@@ -33,7 +33,7 @@ sequence1
 
 特定のスケジューラ上でシーケンスの生成を開始(`subscribe` メソッド)し、disposeを呼び出したい場合は `subscribeOn(scheduler)` を使用します。
 
-`subscribeOn`が明示的に指定されない場合、`subscribe` は `subscribeNext` または `subscribe` が呼ばれた時と同じスレッド/スケジューラ上で呼び出されます。
+`subscribeOn`が明示的に指定されない場合、`subscribe` は `subscribe(onNext:)` または `subscribe` が呼ばれた時と同じスレッド/スケジューラ上で呼び出されます。
 
 `subscribeOn`が明示的に指定されない場合、`dispose`メソッドは破棄を開始した同じスレッド/スケジューラ上で呼び出されます。
 

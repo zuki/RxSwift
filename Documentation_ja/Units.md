@@ -169,7 +169,7 @@ main scheduler上でsubscribeする = subscribeOn(MainScheduler.instance)
 以下は典型的な初心者の例です。
 
 ```swift
-let results = query.rx_text
+let results = query.rx.text
     .throttle(0.3, scheduler: MainScheduler.instance)
     .flatMapLatest { query in
         fetchAutoCompleteItems(query)
@@ -177,11 +177,11 @@ let results = query.rx_text
 
 results
     .map { "\($0.count)" }
-    .bindTo(resultCount.rx_text)
+    .bindTo(resultCount.rx.text)
     .addDisposableTo(disposeBag)
 
 results
-    .bindTo(resultsTableView.rx_itemsWithCellIdentifier("Cell")) { (_, result, cell) in
+    .bindTo(resultsTableView.rx.itemsWithCellIdentifier("Cell")) { (_, result, cell) in
         cell.textLabel?.text = "\(result)"
     }
     .addDisposableTo(disposeBag)
@@ -203,7 +203,7 @@ results
 より適切なコードは次のようになるでしょう。
 
 ```swift
-let results = query.rx_text
+let results = query.rx.text
     .throttle(0.3, scheduler: MainScheduler.instance)
     .flatMapLatest { query in
         fetchAutoCompleteItems(query)
@@ -215,11 +215,11 @@ let results = query.rx_text
 
 results
     .map { "\($0.count)" }
-    .bindTo(resultCount.rx_text)
+    .bindTo(resultCount.rx.text)
     .addDisposableTo(disposeBag)
 
 results
-    .bindTo(resultTableView.rx_itemsWithCellIdentifier("Cell")) { (_, result, cell) in
+    .bindTo(resultTableView.rx.itemsWithCellIdentifier("Cell")) { (_, result, cell) in
         cell.textLabel?.text = "\(result)"
     }
     .addDisposableTo(disposeBag)
@@ -230,7 +230,7 @@ results
 次のコードはほとんど同ように見えます:
 
 ```swift
-let results = query.rx_text.asDriver()        // これは通常のシーケンスを`Driver`シーケンスに変換する
+let results = query.rx.text.asDriver()        // これは通常のシーケンスを`Driver`シーケンスに変換する
     .throttle(0.3, scheduler: MainScheduler.instance)
     .flatMapLatest { query in
         fetchAutoCompleteItems(query)
@@ -239,12 +239,12 @@ let results = query.rx_text.asDriver()        // これは通常のシーケン�
 
 results
     .map { "\($0.count)" }
-    .drive(resultCount.rx_text)               // `bindTo`の代わりに利用できる`drive`メソッドがある場合、
+    .drive(resultCount.rx.text)               // `bindTo`の代わりに利用できる`drive`メソッドがある場合、
     .addDisposableTo(disposeBag)              // それはすべてのプロパティが満たさされていることを
                                               // コンパイラが証明したことを意味する
 
 results
-    .drive(resultTableView.rx_itemsWithCellIdentifier("Cell")) { (_, result, cell) in
+    .drive(resultTableView.rx.itemsWithCellIdentifier("Cell")) { (_, result, cell) in
         cell.textLabel?.text = "\(result)"
     }
     .addDisposableTo(disposeBag)
@@ -255,7 +255,7 @@ results
 まず、`asDriver`メソッドで `ControlProperty` unit を `Driver` unit に変換しています。
 
 ```swift
-query.rx_text.asDriver()
+query.rx.text.asDriver()
 ```
 
 これをするのに特別なことは何も必要がないことに注意してください。`Driver`は、`ControlProperty` unit の全てのプロパティに加えて、さらにいくつかのプロパティを持っています。根底にあるobservableシーケンスがただ`Driver` unitとしてラップされている、それだけです。

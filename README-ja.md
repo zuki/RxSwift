@@ -3,10 +3,11 @@
 
 [![Travis CI](https://travis-ci.org/ReactiveX/RxSwift.svg?branch=master)](https://travis-ci.org/ReactiveX/RxSwift) ![platforms](https://img.shields.io/badge/platforms-iOS%20%7C%20OSX%20%7C%20tvOS%20%7C%20watchOS%20%7C%20Linux%28experimental%29-333333.svg) ![pod](https://img.shields.io/cocoapods/v/RxSwift.svg) [![Carthage compatible](https://img.shields.io/badge/Carthage-compatible-4BC51D.svg?style=flat)](https://github.com/Carthage/Carthage)
 
-
-Xcode 7.3 Swift 2.2 required
-
 ## Rxについて
+
+**:warning: このREADMEはSwift 3.0を必要とするRxSwift 3.0バージョンについて記述していいます。**
+
+**:warning: Swift 2.3互換バージョンを探している場合は、RxSwift ~> 2.0 バージョンと[swift-2.3](https://github.com/ReactiveX/RxSwift/tree/rxswift-2.0) ブランチを見てください。**
 
 Rxは`Observable<Element>`インターフェースで表現した[計算の一般的な抽象化](https://youtu.be/looJcaeboBY)です。
 
@@ -37,7 +38,7 @@ KVO、非同期操作そしてストリームは抽象化されたシーケン�
 
 ###### ... インストールしたいから
 
-* RxSwift/RxCocoa をアプリに統合する. [インストールガイド](Documentation_ja/Installation.md)
+* RxSwift/RxCocoa をアプリに統合する. [インストールガイド](#インストール)
 
 ###### ... ハックしたいから
 
@@ -46,8 +47,8 @@ KVO、非同期操作そしてストリームは抽象化されたシーケン�
 
 ###### ... 交流したいから
 
-* これだけでも十分ですが、RxSwiftを使っている仲間と交流し経験を分かち合うと良いでしょう。<br />[![Slack channel](http://slack.rxswift.org/badge.svg)](http://slack.rxswift.org) [Join Slack Channel](http://slack.rxswift.org/)
-* ライブラリを使用して見つけたバグを報告してください。 [バグ報告テンプレートを使ってIssueを作る](Documentation/IssueTemplate.md)
+* これだけでも十分ですが、RxSwiftを使っている仲間と交流し経験を分かち合うと良いでしょう。<br />[![Slack channel](http://rxswift-slack.herokuapp.com/badge.svg)](http://slack.rxswift.org) [Join Slack Channel](http://rxswift-slack.herokuapp.com)
+* ライブラリを使用して見つけたバグを報告してください。 [バグ報告テンプレートを使ってIssueを作る](Issue_Template.md)
 * 新しい機能をリクエストしてください。 [機能リクエストテンプレートを使ってIssueを作る](Documentation/NewFeatureRequestTemplate.md)
 
 
@@ -79,12 +80,12 @@ KVO、非同期操作そしてストリームは抽象化されたシーケン�
   </tr>
   <tr>
     <td><div class="highlight highlight-source-swift"><pre>
-let searchResults = searchBar.rx_text
+let searchResults = searchBar.rx.text
     .throttle(0.3, scheduler: MainScheduler.instance)
     .distinctUntilChanged()
     .flatMapLatest { query -> Observable<[Repository]> in
         if query.isEmpty {
-            return Observable.just([])
+            return .just([])
         }
 
         return searchGitHub(query)
@@ -98,7 +99,7 @@ let searchResults = searchBar.rx_text
   <tr>
     <td width="30%"><div class="highlight highlight-source-swift"><pre>
 searchResults
-    .bindTo(tableView.rx_itemsWithCellIdentifier("Cell")) {
+    .bindTo(tableView.rx.items(cellIdentifier: "Cell")) {
         (index, repository: Repository, cell) in
         cell.textLabel?.text = repository.name
         cell.detailTextLabel?.text = repository.url
@@ -107,6 +108,15 @@ searchResults
   </tr>
 </table>
 
+## 必要とする環境
+
+* Xcode 8.0 GM (8A218a)
+* Swift 3.0
+
+* iOS 8.0+
+* Mac OS X 10.10+
+* tvOS 9.0+
+* watchOS 2.0+
 
 ## インストール
 
@@ -127,18 +137,31 @@ Rx.xcworkspace を開き, `RxExample` を選択し、run をクリック。こ�
 use_frameworks!
 
 target 'YOUR_TARGET_NAME' do
-    pod 'RxSwift',    '~> 2.0'
-    pod 'RxCocoa',    '~> 2.0'
+    pod 'RxSwift',    '~> 3.0.0-beta.1'
+    pod 'RxCocoa',    '~> 3.0.0-beta.1'
 end
 
 # RxTestsとRxBlocking はユニットテスト/統合テストにおいて必要となります。
 target 'YOUR_TESTING_TARGET' do
-    pod 'RxBlocking', '~> 2.0'
-    pod 'RxTests',    '~> 2.0'
+    pod 'RxBlocking', '~> 3.0.0-beta.1'
+    pod 'RxTests',    '~> 3.0.0-beta.1'
 end
 ```
 
-Replace `YOUR_TARGET_NAME` を実際のターゲット名に置き換えて、`Podfile` のあるディレクトリで次を実行してください:
+`YOUR_TARGET_NAME` を実際のターゲット名に置き換えて、`Podfile` のあるディレクトリで次を実行してください:
+
+**:warning: Xcode 8.0 beta と Swift 3.0でCocoaPodsを使用する場合は、profileに以下の行を追加する必要があるでしょう。:warning:**
+
+```
+post_install do |installer|
+  installer.pods_project.targets.each do |target|
+    target.build_configurations.each do |config|
+      config.build_settings['SWIFT_VERSION'] = '3.0'
+      config.build_settings['MACOSX_DEPLOYMENT_TARGET'] = '10.10'
+    end
+  end
+end
+```
 
 ```
 $ pod install
@@ -146,12 +169,10 @@ $ pod install
 
 ### [Carthage](https://github.com/Carthage/Carthage)
 
-**Xcode 7.1 が必要**
-
 次の内容の `Cartfile` を追加して、
 
 ```
-github "ReactiveX/RxSwift" ~> 2.0
+github "ReactiveX/RxSwift" "3.0.0-beta.1"
 ```
 
 次を実行する:
