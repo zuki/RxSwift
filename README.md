@@ -5,9 +5,9 @@
 
 ## About Rx
 
-**:warning: This readme describes RxSwift 3.0 version that requires Swift 3.0:warning:**
+**:warning: This readme describes RxSwift 3.0 version that requires Swift 3.0.**
 
-**:warning: If you are looking for Swift 2.3 compatible version, please take a look at RxSwift ~> 2.0 versions and [swift-2.3](https://github.com/ReactiveX/RxSwift/tree/rxswift-2.0) branch :warning:**
+**:warning: If you are looking for Swift 2.3 compatible version, please take a look at RxSwift ~> 2.0 versions and [swift-2.3](https://github.com/ReactiveX/RxSwift/tree/rxswift-2.0) branch.**
 
 Rx is a [generic abstraction of computation](https://youtu.be/looJcaeboBY) expressed through `Observable<Element>` interface.
 
@@ -38,7 +38,7 @@ KVO observing, async operations and streams are all unified under [abstraction o
 
 ###### ... install
 
-* Integrate RxSwift/RxCocoa with my app. [Installation Guide](Documentation/Installation.md)
+* Integrate RxSwift/RxCocoa with my app. [Installation Guide](#installation)
 
 ###### ... hack around
 
@@ -85,7 +85,7 @@ let searchResults = searchBar.rx.text
     .distinctUntilChanged()
     .flatMapLatest { query -> Observable<[Repository]> in
         if query.isEmpty {
-            return Observable.just([])
+            return .just([])
         }
 
         return searchGitHub(query)
