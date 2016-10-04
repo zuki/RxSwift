@@ -99,13 +99,13 @@ API
 
 ```swift
 
-extension NSObject {
+extension Reactive where Base: NSObject {
 
-    public var rx_deallocated: Observable<Void> {}
+    public var deallocated: Observable<Void> {}
 
 #if !DISABLE_SWIZZLING
 
-    public var rx_deallocating: Observable<Void> {}
+    public var deallocating: Observable<Void> {}
 
 #endif
 
